@@ -1,0 +1,459 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */; };
+		9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3A02CC179A600EB6E59 /* ContentView.swift */; };
+		9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A22CC179B000EB6E59 /* Assets.xcassets */; };
+		9524C3A62CC179B000EB6E59 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A52CC179B000EB6E59 /* Preview Assets.xcassets */; };
+		9524C3AF2CC182B100EB6E59 /* CoinModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3AE2CC182B100EB6E59 /* CoinModel.swift */; };
+		9524C3B22CC18E4500EB6E59 /* Color.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3B12CC18E4500EB6E59 /* Color.swift */; };
+		9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3B72CC18FE500EB6E59 /* HomeView.swift */; };
+		9524C3BC2CC1918600EB6E59 /* CircleButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3BB2CC1918600EB6E59 /* CircleButtonView.swift */; };
+		9524C3C02CC197BC00EB6E59 /* CoinRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3BF2CC197BC00EB6E59 /* CoinRowView.swift */; };
+		9524C3C22CC1984500EB6E59 /* PreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C12CC1984500EB6E59 /* PreviewProvider.swift */; };
+		9524C3C42CC19BC000EB6E59 /* Double.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C32CC19BC000EB6E59 /* Double.swift */; };
+		9524C3C62CC1C1E700EB6E59 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C52CC1C1E700EB6E59 /* HomeViewModel.swift */; };
+		9524C3C92CC21E5300EB6E59 /* CoinDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		9524C39B2CC179A600EB6E59 /* VirtuTrade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtuTrade.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtuTradeApp.swift; sourceTree = "<group>"; };
+		9524C3A02CC179A600EB6E59 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		9524C3A22CC179B000EB6E59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9524C3A52CC179B000EB6E59 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		9524C3AE2CC182B100EB6E59 /* CoinModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinModel.swift; sourceTree = "<group>"; };
+		9524C3B12CC18E4500EB6E59 /* Color.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Color.swift; sourceTree = "<group>"; };
+		9524C3B72CC18FE500EB6E59 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		9524C3BB2CC1918600EB6E59 /* CircleButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircleButtonView.swift; sourceTree = "<group>"; };
+		9524C3BF2CC197BC00EB6E59 /* CoinRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinRowView.swift; sourceTree = "<group>"; };
+		9524C3C12CC1984500EB6E59 /* PreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewProvider.swift; sourceTree = "<group>"; };
+		9524C3C32CC19BC000EB6E59 /* Double.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Double.swift; sourceTree = "<group>"; };
+		9524C3C52CC1C1E700EB6E59 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinDataService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9524C3982CC179A600EB6E59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9524C3922CC179A600EB6E59 = {
+			isa = PBXGroup;
+			children = (
+				9524C39D2CC179A600EB6E59 /* VirtuTrade */,
+				9524C39C2CC179A600EB6E59 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9524C39C2CC179A600EB6E59 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9524C39B2CC179A600EB6E59 /* VirtuTrade.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9524C39D2CC179A600EB6E59 /* VirtuTrade */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3CA2CC2C4D400EB6E59 /* Utilities */,
+				9524C3B02CC18E3800EB6E59 /* Extensions */,
+				9524C3C72CC21E1400EB6E59 /* Services */,
+				9524C3B32CC18FA400EB6E59 /* Core */,
+				9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */,
+				9524C3A02CC179A600EB6E59 /* ContentView.swift */,
+				9524C3A22CC179B000EB6E59 /* Assets.xcassets */,
+				9524C3A42CC179B000EB6E59 /* Preview Content */,
+				9524C3AE2CC182B100EB6E59 /* CoinModel.swift */,
+			);
+			path = VirtuTrade;
+			sourceTree = "<group>";
+		};
+		9524C3A42CC179B000EB6E59 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3A52CC179B000EB6E59 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		9524C3B02CC18E3800EB6E59 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3B12CC18E4500EB6E59 /* Color.swift */,
+				9524C3C12CC1984500EB6E59 /* PreviewProvider.swift */,
+				9524C3C32CC19BC000EB6E59 /* Double.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		9524C3B32CC18FA400EB6E59 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3B92CC1915900EB6E59 /* Components */,
+				9524C3B42CC18FB700EB6E59 /* Home */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		9524C3B42CC18FB700EB6E59 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3B62CC18FD200EB6E59 /* ViewModels */,
+				9524C3B52CC18FC500EB6E59 /* Views */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		9524C3B52CC18FC500EB6E59 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3B72CC18FE500EB6E59 /* HomeView.swift */,
+				9524C3BF2CC197BC00EB6E59 /* CoinRowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9524C3B62CC18FD200EB6E59 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3C52CC1C1E700EB6E59 /* HomeViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		9524C3B92CC1915900EB6E59 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3BA2CC1917400EB6E59 /* CircleButton */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		9524C3BA2CC1917400EB6E59 /* CircleButton */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3BB2CC1918600EB6E59 /* CircleButtonView.swift */,
+			);
+			path = CircleButton;
+			sourceTree = "<group>";
+		};
+		9524C3C72CC21E1400EB6E59 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		9524C3CA2CC2C4D400EB6E59 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9524C39A2CC179A600EB6E59 /* VirtuTrade */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9524C3A92CC179B000EB6E59 /* Build configuration list for PBXNativeTarget "VirtuTrade" */;
+			buildPhases = (
+				9524C3972CC179A600EB6E59 /* Sources */,
+				9524C3982CC179A600EB6E59 /* Frameworks */,
+				9524C3992CC179A600EB6E59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VirtuTrade;
+			productName = VirtuTrade;
+			productReference = 9524C39B2CC179A600EB6E59 /* VirtuTrade.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9524C3932CC179A600EB6E59 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1510;
+				LastUpgradeCheck = 1510;
+				TargetAttributes = {
+					9524C39A2CC179A600EB6E59 = {
+						CreatedOnToolsVersion = 15.1;
+					};
+				};
+			};
+			buildConfigurationList = 9524C3962CC179A600EB6E59 /* Build configuration list for PBXProject "VirtuTrade" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9524C3922CC179A600EB6E59;
+			productRefGroup = 9524C39C2CC179A600EB6E59 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9524C39A2CC179A600EB6E59 /* VirtuTrade */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9524C3992CC179A600EB6E59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9524C3A62CC179B000EB6E59 /* Preview Assets.xcassets in Resources */,
+				9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9524C3972CC179A600EB6E59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9524C3C02CC197BC00EB6E59 /* CoinRowView.swift in Sources */,
+				9524C3C62CC1C1E700EB6E59 /* HomeViewModel.swift in Sources */,
+				9524C3BC2CC1918600EB6E59 /* CircleButtonView.swift in Sources */,
+				9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */,
+				9524C3B22CC18E4500EB6E59 /* Color.swift in Sources */,
+				9524C3AF2CC182B100EB6E59 /* CoinModel.swift in Sources */,
+				9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */,
+				9524C3C22CC1984500EB6E59 /* PreviewProvider.swift in Sources */,
+				9524C3C42CC19BC000EB6E59 /* Double.swift in Sources */,
+				9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */,
+				9524C3C92CC21E5300EB6E59 /* CoinDataService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		9524C3A72CC179B000EB6E59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9524C3A82CC179B000EB6E59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		9524C3AA2CC179B000EB6E59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"VirtuTrade/Preview Content\"";
+				DEVELOPMENT_TEAM = KT4T7V7242;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VirtuTrade;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.marku.jasin.VirtuTrade;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9524C3AB2CC179B000EB6E59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"VirtuTrade/Preview Content\"";
+				DEVELOPMENT_TEAM = KT4T7V7242;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VirtuTrade;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = me.marku.jasin.VirtuTrade;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9524C3962CC179A600EB6E59 /* Build configuration list for PBXProject "VirtuTrade" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9524C3A72CC179B000EB6E59 /* Debug */,
+				9524C3A82CC179B000EB6E59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9524C3A92CC179B000EB6E59 /* Build configuration list for PBXNativeTarget "VirtuTrade" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9524C3AA2CC179B000EB6E59 /* Debug */,
+				9524C3AB2CC179B000EB6E59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9524C3932CC179A600EB6E59 /* Project object */;
+}
