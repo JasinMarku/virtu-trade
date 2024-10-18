@@ -20,6 +20,7 @@
 		9524C3C42CC19BC000EB6E59 /* Double.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C32CC19BC000EB6E59 /* Double.swift */; };
 		9524C3C62CC1C1E700EB6E59 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C52CC1C1E700EB6E59 /* HomeViewModel.swift */; };
 		9524C3C92CC21E5300EB6E59 /* CoinDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */; };
+		9524C3CC2CC2C8BD00EB6E59 /* NetworkingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3CB2CC2C8BD00EB6E59 /* NetworkingManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		9524C3C32CC19BC000EB6E59 /* Double.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Double.swift; sourceTree = "<group>"; };
 		9524C3C52CC1C1E700EB6E59 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinDataService.swift; sourceTree = "<group>"; };
+		9524C3CB2CC2C8BD00EB6E59 /* NetworkingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkingManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +164,7 @@
 		9524C3CA2CC2C4D400EB6E59 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				9524C3CB2CC2C8BD00EB6E59 /* NetworkingManager.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -245,6 +248,7 @@
 				9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */,
 				9524C3C22CC1984500EB6E59 /* PreviewProvider.swift in Sources */,
 				9524C3C42CC19BC000EB6E59 /* Double.swift in Sources */,
+				9524C3CC2CC2C8BD00EB6E59 /* NetworkingManager.swift in Sources */,
 				9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */,
 				9524C3C92CC21E5300EB6E59 /* CoinDataService.swift in Sources */,
 			);
