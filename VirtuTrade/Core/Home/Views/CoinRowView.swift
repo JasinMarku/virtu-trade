@@ -68,6 +68,7 @@ extension CoinRowView {
             Text("\(coin.currentPrice, format: .currency(code: "USD"))")
                 .bold()
                 .foregroundStyle(Color.primary)
+            
             HStack {
                 Image(coin.priceChangePercentage24H ?? 0 >= 0 ? "trending-up" : "trending-down")
                     .renderingMode(.template)
@@ -77,7 +78,7 @@ extension CoinRowView {
                     .foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)
 
                 
-                Text("\(coin.priceChangePercentage24H ?? 0 >= 0 ? "+" : "-")\(String(format: "%.2f", coin.priceChangePercentage24H ?? 0))%")
+                Text("\(coin.priceChangePercentage24H ?? 0 >= 0 ? "+" : "")\(String(format: "%.2f", coin.priceChangePercentage24H ?? 0))%")
                     .foregroundStyle(
                         (coin.priceChangePercentage24H ?? 0) >= 0 ?
                         Color.theme.green:

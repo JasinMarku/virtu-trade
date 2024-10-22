@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		95096C462CC71B0B008A1C5D /* LocalFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95096C452CC71B0B008A1C5D /* LocalFileManager.swift */; };
 		9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */; };
 		9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3A02CC179A600EB6E59 /* ContentView.swift */; };
 		9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A22CC179B000EB6E59 /* Assets.xcassets */; };
@@ -27,6 +28,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		95096C452CC71B0B008A1C5D /* LocalFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFileManager.swift; sourceTree = "<group>"; };
 		9524C39B2CC179A600EB6E59 /* VirtuTrade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtuTrade.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtuTradeApp.swift; sourceTree = "<group>"; };
 		9524C3A02CC179A600EB6E59 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -173,6 +175,7 @@
 			isa = PBXGroup;
 			children = (
 				9524C3CB2CC2C8BD00EB6E59 /* NetworkingManager.swift */,
+				95096C452CC71B0B008A1C5D /* LocalFileManager.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -263,6 +266,7 @@
 				9524C3BC2CC1918600EB6E59 /* CircleButtonView.swift in Sources */,
 				9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */,
 				9524C3B22CC18E4500EB6E59 /* Color.swift in Sources */,
+				95096C462CC71B0B008A1C5D /* LocalFileManager.swift in Sources */,
 				9524C3AF2CC182B100EB6E59 /* CoinModel.swift in Sources */,
 				9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */,
 				9524C3C22CC1984500EB6E59 /* PreviewProvider.swift in Sources */,
