@@ -22,6 +22,8 @@ struct HomeView: View {
             VStack {
                 homeHeader
                 
+                SearchBarView(searchText: $vm.searchText)
+                
                 columnTitles
                 
                 if !showPortfolio {
@@ -72,6 +74,7 @@ extension HomeView {
             })
         }
         .padding(.horizontal)
+        .padding(.bottom, -15)
     }
     
     private var allCoinsList: some View {
@@ -79,24 +82,19 @@ extension HomeView {
             ForEach(vm.allCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: false)
                 .listRowInsets(.init(top: 10, leading: 0, bottom: 10, trailing: 10))
+                .listRowBackground(Color.theme.background)
+                .listRowSeparator(.hidden)
             }
         }
         .listStyle(.plain)
     }
     
     private var portfolioCoinsList: some View {
-//        ZStack {
-//            Color.theme.background
-//                .ignoresSafeArea()
-            List {
-                ForEach(vm.portfolioCoins) { coin in
-                        CoinRowView(coin: coin, showHoldingsColumn: true)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.theme.background)
-                }
+        VStack {
+            ForEach(vm.portfolioCoins) { coin in
+                CoinRowView(coin: coin, showHoldingsColumn: true)
             }
-            .listStyle(.plain)
-//        }
+        }
     }
     
     private var columnTitles: some View {
