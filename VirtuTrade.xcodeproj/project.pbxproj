@@ -25,6 +25,7 @@
 		9524C3CF2CC2E00400EB6E59 /* CoinImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3CE2CC2E00400EB6E59 /* CoinImageView.swift */; };
 		9524C3D12CC2E13800EB6E59 /* CoinImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3D02CC2E13800EB6E59 /* CoinImageService.swift */; };
 		9524C3D32CC2E6C600EB6E59 /* CoinImageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3D22CC2E6C600EB6E59 /* CoinImageViewModel.swift */; };
+		9543BFAC2CC854C20068C03E /* SearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9543BFAB2CC854C20068C03E /* SearchBarView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		9524C3CE2CC2E00400EB6E59 /* CoinImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinImageView.swift; sourceTree = "<group>"; };
 		9524C3D02CC2E13800EB6E59 /* CoinImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinImageService.swift; sourceTree = "<group>"; };
 		9524C3D22CC2E6C600EB6E59 /* CoinImageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinImageViewModel.swift; sourceTree = "<group>"; };
+		9543BFAB2CC854C20068C03E /* SearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +152,7 @@
 			children = (
 				9524C3CD2CC2DFF500EB6E59 /* CoinImage */,
 				9524C3BA2CC1917400EB6E59 /* CircleButton */,
+				9543BFAB2CC854C20068C03E /* SearchBarView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -274,6 +277,7 @@
 				9524C3CC2CC2C8BD00EB6E59 /* NetworkingManager.swift in Sources */,
 				9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */,
 				9524C3D12CC2E13800EB6E59 /* CoinImageService.swift in Sources */,
+				9543BFAC2CC854C20068C03E /* SearchBarView.swift in Sources */,
 				9524C3C92CC21E5300EB6E59 /* CoinDataService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
