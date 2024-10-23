@@ -9,6 +9,14 @@ import Foundation
 import Combine
 
 class HomeViewModel: ObservableObject {
+    
+    @Published var statistics: [StatisticModel] = [
+        StatisticModel(title: "Market Cap", value: "$2.51T", percentageChange: 00.5),
+        StatisticModel(title: "24h Volume", value: "$336.8B"),
+        StatisticModel(title: "BTC Dominance", value: "42.68"),
+        StatisticModel(title: "Portfolio Value", value: "$17,741", percentageChange: 0.06)
+    ]
+    
     @Published var allCoins: [CoinModel] = []
     @Published var portfolioCoins: [CoinModel] = []
     
@@ -22,7 +30,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func addSubcribers() {
-        // updates allCoins
+            // updates allCoins
         $searchText
             .combineLatest(dataService.$allCoins)
             .debounce(for: .seconds(0.5), scheduler: DispatchQueue.main)

@@ -22,8 +22,11 @@ struct HomeView: View {
             VStack {
                 homeHeader
                 
+                HomeStatsView(showPortfolio: $showPortfolio)
+                    .padding(.bottom, -5)
+
                 SearchBarView(searchText: $vm.searchText)
-                
+                                
                 columnTitles
                 
                 if !showPortfolio {
@@ -74,18 +77,18 @@ extension HomeView {
             })
         }
         .padding(.horizontal)
-        .padding(.bottom, -15)
     }
     
     private var allCoinsList: some View {
         List {
             ForEach(vm.allCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: false)
-                .listRowInsets(.init(top: 10, leading: 0, bottom: 10, trailing: 10))
+                .listRowInsets(.init(top: 15, leading: 0, bottom: 15, trailing: 10))
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
             }
         }
+        .scrollIndicators(.hidden)
         .listStyle(.plain)
     }
     
@@ -107,9 +110,11 @@ extension HomeView {
             Text("Price")
                 .frame(width: UIScreen.main.bounds.width / 3.5, alignment: .trailing)
         }
-        .font(.caption)
+        .font(.subheadline)
         .fontWeight(.medium)
         .foregroundStyle(Color.theme.secondaryText)
         .padding(.horizontal)
+        .padding(.top, 10)
+
     }
 }

@@ -32,7 +32,7 @@ struct CoinRowView: View {
 
 extension CoinRowView { 
     private var leftColumn: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 13) {
             Text("\(coin.rank)")
                 .font(.caption)
                 .foregroundStyle(Color.theme.secondaryText)
@@ -51,7 +51,7 @@ extension CoinRowView {
                     .foregroundStyle(Color.primary.opacity(0.7))
             }
         }
-        .padding(.leading, 6)
+        .padding(.leading, 15)
     }
     
     private var centerColumn: some View {
