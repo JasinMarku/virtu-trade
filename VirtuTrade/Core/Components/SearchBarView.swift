@@ -17,13 +17,24 @@ struct SearchBarView: View {
     
     
     @Binding var searchText: String
+    @FocusState private var isFocused: Bool
     
     var body: some View {
         HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.theme.secondaryText)
+           if isFocused {
+               Button(action: {
+                   dismissKeyboard()
+               }, label: {
+                   Image(systemName: "arrow.left")
+                      .foregroundStyle(Color.theme.accent)
+               })
+           } else {
+               Image(systemName: "magnifyingglass")
+                   .foregroundStyle(Color.theme.secondaryText)
+           }
             
-            TextField("Search by name or symbol", text: $searchText)
+            TextField("Search", text: $searchText)
+                .focused($isFocused)
                 .autocorrectionDisabled(true)
                 .fontWeight(.medium)
                 .overlay(
@@ -41,11 +52,15 @@ struct SearchBarView: View {
 
         }
         .font(.headline)
-        .padding(.vertical, -5)
+        .padding(.vertical, -2)
         .padding()
         .background(
             Capsule()
                 .fill(Color.theme.accentBackground)
+                .overlay(
+                    Capsule()
+                        .stroke(isFocused ? Color.theme.accent : Color.clear, lineWidth: 1.0)
+                )
         )
         .padding()
     }
