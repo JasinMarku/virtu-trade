@@ -11,6 +11,8 @@
 		951E7D652CC9A6840035CFEC /* StatisticModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D642CC9A6840035CFEC /* StatisticModel.swift */; };
 		951E7D672CC9A7A80035CFEC /* StatisticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D662CC9A7A80035CFEC /* StatisticView.swift */; };
 		951E7D692CC9AAB60035CFEC /* HomeStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D682CC9AAB60035CFEC /* HomeStatsView.swift */; };
+		951E7D6B2CCAAE1F0035CFEC /* MarketDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */; };
+		951E7D6D2CCC05E80035CFEC /* MarketDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */; };
 		9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */; };
 		9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3A02CC179A600EB6E59 /* ContentView.swift */; };
 		9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A22CC179B000EB6E59 /* Assets.xcassets */; };
@@ -36,6 +38,8 @@
 		951E7D642CC9A6840035CFEC /* StatisticModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticModel.swift; sourceTree = "<group>"; };
 		951E7D662CC9A7A80035CFEC /* StatisticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticView.swift; sourceTree = "<group>"; };
 		951E7D682CC9AAB60035CFEC /* HomeStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatsView.swift; sourceTree = "<group>"; };
+		951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataModel.swift; sourceTree = "<group>"; };
+		951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataService.swift; sourceTree = "<group>"; };
 		9524C39B2CC179A600EB6E59 /* VirtuTrade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtuTrade.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtuTradeApp.swift; sourceTree = "<group>"; };
 		9524C3A02CC179A600EB6E59 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -73,6 +77,7 @@
 			children = (
 				9524C3AE2CC182B100EB6E59 /* CoinModel.swift */,
 				951E7D642CC9A6840035CFEC /* StatisticModel.swift */,
+				951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -187,6 +192,7 @@
 			children = (
 				9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */,
 				9524C3D02CC2E13800EB6E59 /* CoinImageService.swift */,
+				951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -286,6 +292,7 @@
 				9524C3BC2CC1918600EB6E59 /* CircleButtonView.swift in Sources */,
 				9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */,
 				9524C3B22CC18E4500EB6E59 /* Color.swift in Sources */,
+				951E7D6B2CCAAE1F0035CFEC /* MarketDataModel.swift in Sources */,
 				95096C462CC71B0B008A1C5D /* LocalFileManager.swift in Sources */,
 				9524C3AF2CC182B100EB6E59 /* CoinModel.swift in Sources */,
 				951E7D692CC9AAB60035CFEC /* HomeStatsView.swift in Sources */,
@@ -295,6 +302,7 @@
 				9524C3CC2CC2C8BD00EB6E59 /* NetworkingManager.swift in Sources */,
 				951E7D672CC9A7A80035CFEC /* StatisticView.swift in Sources */,
 				9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */,
+				951E7D6D2CCC05E80035CFEC /* MarketDataService.swift in Sources */,
 				9524C3D12CC2E13800EB6E59 /* CoinImageService.swift in Sources */,
 				9543BFAC2CC854C20068C03E /* SearchBarView.swift in Sources */,
 				951E7D652CC9A6840035CFEC /* StatisticModel.swift in Sources */,

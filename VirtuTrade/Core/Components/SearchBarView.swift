@@ -52,7 +52,7 @@ struct SearchBarView: View {
 
         }
         .font(.headline)
-        .padding(.vertical, -5)
+        .padding(.vertical, -2)
         .padding()
         .background(
             Capsule()
