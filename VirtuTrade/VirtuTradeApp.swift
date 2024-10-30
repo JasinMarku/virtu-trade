@@ -13,8 +13,8 @@ struct VirtuTradeApp: App {
     @StateObject private var vm = HomeViewModel()
     
     init() {
-        UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor : UIColor(Color.theme.accent)]
-        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor : UIColor(Color.theme.accent)]
+        UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor : UIColor(Color.primary)]
+        UINavigationBar.appearance().titleTextAttributes = [.foregroundColor : UIColor(Color.primary)]
 
     }
     

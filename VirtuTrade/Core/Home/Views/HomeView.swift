@@ -11,7 +11,7 @@ struct HomeView: View {
     
     @EnvironmentObject private var vm: HomeViewModel
     @State private var showPortfolio: Bool = false     // animate right
-    @State private var showPortfolioView: Bool = false // new Sheet
+    @State private var showPortfolioView: Bool = false // new sheet
     
     var body: some View {
         ZStack {
@@ -32,6 +32,7 @@ struct HomeView: View {
                     .padding(.bottom, -5)
 
                 SearchBarView(searchText: $vm.searchText)
+                    .padding(.top, -5)
                                 
                 columnTitles
                 
@@ -105,11 +106,16 @@ extension HomeView {
     }
     
     private var portfolioCoinsList: some View {
-        VStack {
+        List {
             ForEach(vm.portfolioCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: true)
+                    .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
+                    .listRowBackground(Color.theme.background)
+                    .listRowSeparator(.hidden)
             }
         }
+        .scrollIndicators(.hidden)
+        .listStyle(.plain)
     }
     
     private var columnTitles: some View {
