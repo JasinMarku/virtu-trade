@@ -41,11 +41,11 @@ extension CoinRowView {
                 .frame(width: 30, height: 30)
             
             VStack(alignment: .leading, spacing: 6){
-                Text(coin.name)
-                    .font(.headline)
-                
                 Text(coin.symbol)
+                    .font(.headline)
                     .textCase(.uppercase)
+                
+                Text(coin.name)
                     .font(.headline)
                     .fontWeight(.regular)
                     .foregroundStyle(Color.primary.opacity(0.7))
