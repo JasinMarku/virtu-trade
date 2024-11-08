@@ -101,6 +101,9 @@ extension HomeView {
                 .listRowSeparator(.hidden)
             }
         }
+        .refreshable {
+            vm.reloadData()
+        }
         .scrollIndicators(.hidden)
         .listStyle(.plain)
     }
