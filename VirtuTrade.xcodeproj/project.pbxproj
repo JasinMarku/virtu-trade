@@ -16,6 +16,9 @@
 		951E7D6B2CCAAE1F0035CFEC /* MarketDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */; };
 		951E7D6D2CCC05E80035CFEC /* MarketDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */; };
 		952338B92CE14E5800D42FF5 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952338B82CE14E5800D42FF5 /* DetailView.swift */; };
+		952338BB2CE2F98600D42FF5 /* CoinDetailModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952338BA2CE2F98600D42FF5 /* CoinDetailModel.swift */; };
+		952338BD2CE2FCE000D42FF5 /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952338BC2CE2FCE000D42FF5 /* DetailViewModel.swift */; };
+		952338BF2CE2FD0D00D42FF5 /* CoinDetailDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952338BE2CE2FD0D00D42FF5 /* CoinDetailDataService.swift */; };
 		9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */; };
 		9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3A02CC179A600EB6E59 /* ContentView.swift */; };
 		9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A22CC179B000EB6E59 /* Assets.xcassets */; };
@@ -49,6 +52,9 @@
 		951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataModel.swift; sourceTree = "<group>"; };
 		951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataService.swift; sourceTree = "<group>"; };
 		952338B82CE14E5800D42FF5 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
+		952338BA2CE2F98600D42FF5 /* CoinDetailModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinDetailModel.swift; sourceTree = "<group>"; };
+		952338BC2CE2FCE000D42FF5 /* DetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
+		952338BE2CE2FD0D00D42FF5 /* CoinDetailDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinDetailDataService.swift; sourceTree = "<group>"; };
 		9524C39B2CC179A600EB6E59 /* VirtuTrade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtuTrade.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtuTradeApp.swift; sourceTree = "<group>"; };
 		9524C3A02CC179A600EB6E59 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -88,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				9524C3AE2CC182B100EB6E59 /* CoinModel.swift */,
+				952338BA2CE2F98600D42FF5 /* CoinDetailModel.swift */,
 				951E7D642CC9A6840035CFEC /* StatisticModel.swift */,
 				951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */,
 				951C81DF2CD2D02300E2A1A4 /* PortfolioContainer.xcdatamodeld */,
@@ -107,6 +114,7 @@
 		952338B62CE14E3D00D42FF5 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				952338BC2CE2FCE000D42FF5 /* DetailViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -231,6 +239,7 @@
 			isa = PBXGroup;
 			children = (
 				9524C3C82CC21E5300EB6E59 /* CoinDataService.swift */,
+				952338BE2CE2FD0D00D42FF5 /* CoinDetailDataService.swift */,
 				9524C3D02CC2E13800EB6E59 /* CoinImageService.swift */,
 				951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */,
 				951C81E22CD2D0BB00E2A1A4 /* PortfolioDataService.swift */,
@@ -338,7 +347,10 @@
 				9524C3B22CC18E4500EB6E59 /* Color.swift in Sources */,
 				951E7D6B2CCAAE1F0035CFEC /* MarketDataModel.swift in Sources */,
 				95096C462CC71B0B008A1C5D /* LocalFileManager.swift in Sources */,
+				952338BF2CE2FD0D00D42FF5 /* CoinDetailDataService.swift in Sources */,
 				9524C3AF2CC182B100EB6E59 /* CoinModel.swift in Sources */,
+				952338BB2CE2F98600D42FF5 /* CoinDetailModel.swift in Sources */,
+				952338BD2CE2FCE000D42FF5 /* DetailViewModel.swift in Sources */,
 				951E7D692CC9AAB60035CFEC /* HomeStatsView.swift in Sources */,
 				959A3BC12CD00E3E00BF074B /* XMarkButton.swift in Sources */,
 				9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */,
