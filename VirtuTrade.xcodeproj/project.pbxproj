@@ -15,6 +15,7 @@
 		951E7D692CC9AAB60035CFEC /* HomeStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D682CC9AAB60035CFEC /* HomeStatsView.swift */; };
 		951E7D6B2CCAAE1F0035CFEC /* MarketDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */; };
 		951E7D6D2CCC05E80035CFEC /* MarketDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */; };
+		952338B92CE14E5800D42FF5 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 952338B82CE14E5800D42FF5 /* DetailView.swift */; };
 		9524C39F2CC179A600EB6E59 /* VirtuTradeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */; };
 		9524C3A12CC179A600EB6E59 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9524C3A02CC179A600EB6E59 /* ContentView.swift */; };
 		9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9524C3A22CC179B000EB6E59 /* Assets.xcassets */; };
@@ -47,6 +48,7 @@
 		951E7D682CC9AAB60035CFEC /* HomeStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatsView.swift; sourceTree = "<group>"; };
 		951E7D6A2CCAAE1F0035CFEC /* MarketDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataModel.swift; sourceTree = "<group>"; };
 		951E7D6C2CCC05E80035CFEC /* MarketDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketDataService.swift; sourceTree = "<group>"; };
+		952338B82CE14E5800D42FF5 /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		9524C39B2CC179A600EB6E59 /* VirtuTrade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtuTrade.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9524C39E2CC179A600EB6E59 /* VirtuTradeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtuTradeApp.swift; sourceTree = "<group>"; };
 		9524C3A02CC179A600EB6E59 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -91,6 +93,30 @@
 				951C81DF2CD2D02300E2A1A4 /* PortfolioContainer.xcdatamodeld */,
 			);
 			path = Model;
+			sourceTree = "<group>";
+		};
+		952338B52CE14E1900D42FF5 /* Detail */ = {
+			isa = PBXGroup;
+			children = (
+				952338B62CE14E3D00D42FF5 /* ViewModels */,
+				952338B72CE14E4200D42FF5 /* View */,
+			);
+			path = Detail;
+			sourceTree = "<group>";
+		};
+		952338B62CE14E3D00D42FF5 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		952338B72CE14E4200D42FF5 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				952338B82CE14E5800D42FF5 /* DetailView.swift */,
+			);
+			path = View;
 			sourceTree = "<group>";
 		};
 		9524C3922CC179A600EB6E59 = {
@@ -148,6 +174,7 @@
 			children = (
 				9524C3B92CC1915900EB6E59 /* Components */,
 				9524C3B42CC18FB700EB6E59 /* Home */,
+				952338B52CE14E1900D42FF5 /* Detail */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -317,6 +344,7 @@
 				9524C3B82CC18FE500EB6E59 /* HomeView.swift in Sources */,
 				9524C3C22CC1984500EB6E59 /* PreviewProvider.swift in Sources */,
 				9524C3C42CC19BC000EB6E59 /* Double.swift in Sources */,
+				952338B92CE14E5800D42FF5 /* DetailView.swift in Sources */,
 				9524C3CC2CC2C8BD00EB6E59 /* NetworkingManager.swift in Sources */,
 				951E7D672CC9A7A80035CFEC /* StatisticView.swift in Sources */,
 				959A3BBF2CD00B7500BF074B /* PortfolioView.swift in Sources */,
