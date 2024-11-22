@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct DetailLoadingView: View {
     
@@ -34,32 +35,181 @@ struct DetailView: View {
     }
     
     var body: some View {
+        ZStack {
+            Color.theme.background
+                .ignoresSafeArea()
+            
         ScrollView {
-            VStack(spacing: 20) {
-                Text("")
-                    .frame(height: 150)
                 
-                overviewTitle
-                
-                Divider()
-                
-                overviewGrid
-                
-                additionalTitle
-                
-                Divider()
-                
-                additionalGrid
+                VStack(spacing: 20) {
+                    ChartView(coin: vm.coin)
+                        .padding(.vertical)
+                    
+                    overviewTitle
+                    
+                    Divider()
+                    
+                    overviewGrid
+                    
+                    additionalTitle
+                    
+                    Divider()
+                    
+                    additionalGrid
+                }
+                .padding()
+                .padding(.top, -10)
             }
-            .padding()
         }
-        .navigationTitle(vm.coin.name)
+        .scrollIndicators(.hidden)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                navigationBarTrailingItems
+            }
+        }
     }
 }
 
 #Preview {
     NavigationStack {
         DetailView(coin: DeveloperPreview.instance.coin)
+    }
+}
+
+struct ChartView: View {
+    let coin: CoinModel
+    
+    @State private var selectedPrice: Double?
+    @State private var selectedIndex: Int?
+    @State private var plotWidth: CGFloat = 0
+    
+    private let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+    private let selectionGenerator = UISelectionFeedbackGenerator()
+    
+    @State private var previousIndex: Int?
+    
+    private var priceData: [Double] {
+        coin.sparklineIn7D?.price ?? []
+    }
+    
+    // Price Calculations
+    private var minPrice: Double {
+        priceData.min() ?? 0
+    }
+    
+    private var maxPrice: Double {
+        priceData.max() ?? 0
+    }
+    
+    private var priceChange: Double {
+        let prices = coin.sparklineIn7D?.price ?? []
+        guard let firstPrice = prices.first,
+              let lastPrice = prices.last else {
+            return 0
+        }
+        return lastPrice - firstPrice
+    }
+    
+    private var displayPrice: Double {
+        selectedPrice ?? coin.currentPrice
+    }
+    
+    private var dateText: String {
+        let calendar = Calendar.current
+        let selectedDate: Date
+        
+        if let index = selectedIndex {
+            // Calculate date for dragging
+            let endDate = Date()
+            guard let startDate = calendar.date(byAdding: .day, value: -7, to: endDate),
+                  let date = calendar.date(byAdding: .hour,
+                                         value: Int(Double(index) * (168.0 / Double(priceData.count))),
+                                         to: startDate) else { return "" }
+            selectedDate = date
+        } else {
+            // Use current date when not dragging
+            selectedDate = Date()
+        }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E, MMM d"
+        return formatter.string(from: selectedDate)
+    }
+    
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8){
+            VStack(alignment: .leading, spacing: 10) {
+                Text(coin.name)
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                    Text(displayPrice.asCurrencyWith2Decimals())
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)
+                        .shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green.opacity(0.5) : Color.theme.red.opacity(0.5), radius: 8)
+                
+                
+                    Text(dateText)
+                        .font(.headline)
+                        .foregroundStyle(Color.theme.secondaryText)
+            }
+            
+            Chart {
+                ForEach(Array(zip(coin.sparklineIn7D?.price ?? [], 0...168)), id: \.1) { price, index in
+                    LineMark(
+                        x: .value("Time", index),
+                        y: .value("Price", price)
+                    )
+                    .interpolationMethod(.cardinal)
+                    if let selectedIndex, selectedIndex == index {
+                        RuleMark (
+                            x: .value("Time", index)
+                        )
+                        .foregroundStyle(Color.theme.secondaryText)
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                    }
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYScale(domain: .automatic(includesZero: false))
+            .chartYAxis {
+                AxisMarks(position: .trailing) { _ in
+                        AxisGridLine(centered: true, stroke: StrokeStyle(lineWidth: 0))
+                        AxisValueLabel()
+                }
+            }
+            .frame(height: 200)
+            .foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)
+            .shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red, radius: /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/)
+            .overlay(
+                GeometryReader { proxy in
+                        Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let index = Int((value.location.x / proxy.size.width) * CGFloat(priceData.count))
+                                    if index >= 0 && index < priceData.count {
+                                        if index != previousIndex {
+                                            impactGenerator.impactOccurred()
+                                            previousIndex = index
+                                        }
+                                        
+                                        selectedIndex = index
+                                        selectedPrice = priceData[index]
+                                    }
+                                }
+                                .onEnded { _ in
+                                    selectedIndex = nil
+                                    selectedPrice = nil
+                                }
+                        )
+                }
+            )
+        }
     }
 }
 
@@ -100,5 +250,16 @@ extension DetailView {
                 StatisticView(stat: stat)
             }
         })
+    }
+    
+    private var navigationBarTrailingItems: some View {
+        HStack {
+            Text(vm.coin.symbol.uppercased())
+                .font(.headline)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            CoinImageView(coin: vm.coin)
+                .frame(width: 25, height: 25)
+        }
     }
 }
