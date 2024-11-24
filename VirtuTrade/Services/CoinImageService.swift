@@ -28,23 +28,16 @@ class CoinImageService {
     private func getCoinImage() {
         if let savedImage = fileManager.getImage(imageName: imageName, folderName: folderName) {
             image = savedImage
-            print("✅ - Retrieved image from File Manager")
         } else {
             downloadCoinImage()
-            print("☁️ - Downloading Image Now.")
         }
     }
     
-    
     private func downloadCoinImage() {
-        print("Downloading Image Now.")
-        // Validates the URL
         guard let url = URL(string: coin.image) else { return }
         
-//       Starts download, calls a method to start downloading data from the URL.
-//       Method returns a publisher, which is a Combine concept for handling asynchronous data streams.
         imageSubscription = NetworkingManager.download(url: url)
-            .tryMap({ (data) -> UIImage? in // Convert Data to UIImage
+            .tryMap({ (data) -> UIImage? in
                 return UIImage(data: data)
             })
             .sink(receiveCompletion: NetworkingManager.handleCompletion, receiveValue: { [weak self ](returnedImage) in

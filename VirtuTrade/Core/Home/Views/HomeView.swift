@@ -12,6 +12,9 @@ struct HomeView: View {
     @EnvironmentObject private var vm: HomeViewModel
     @State private var showPortfolio: Bool = false     // animate right
     @State private var showPortfolioView: Bool = false // new sheet
+    @State private var showSettingsView: Bool = false
+    @State private var selectedCoin: CoinModel? = nil
+    @State private var showDetailView: Bool = false
     
     var body: some View {
         ZStack {
@@ -49,6 +52,14 @@ struct HomeView: View {
                 Spacer(minLength: 0)
             }
             .animation(.easeInOut, value: showPortfolio)
+            .sheet(isPresented: $showSettingsView) {
+                SettingsView()
+            }
+        }
+        .navigationDestination(isPresented: $showDetailView) {
+            if selectedCoin != nil {
+                DetailLoadingView(coin: $selectedCoin)
+            }
         }
     }
 }
@@ -66,6 +77,8 @@ extension HomeView {
             Button(action: {
                 if showPortfolio {
                     showPortfolioView.toggle()
+                } else {
+                    showSettingsView.toggle()
                 }
             }, label: {
                 CircleButtonView(iconName: showPortfolio ? "plus" : "info")
@@ -92,6 +105,12 @@ extension HomeView {
         .padding(.horizontal)
     }
     
+    // For Coin Navigation
+    private func segue(coin: CoinModel) {
+        selectedCoin = coin
+        showDetailView.toggle()
+    }
+    
     private var allCoinsList: some View {
         List {
             ForEach(vm.allCoins) { coin in
@@ -99,6 +118,9 @@ extension HomeView {
                 .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
+                .onTapGesture {
+                    segue(coin: coin)
+                }
             }
         }
         .refreshable {
@@ -108,6 +130,7 @@ extension HomeView {
         .listStyle(.plain)
     }
     
+    
     private var portfolioCoinsList: some View {
         List {
             ForEach(vm.portfolioCoins) { coin in
@@ -115,6 +138,9 @@ extension HomeView {
                     .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
                     .listRowBackground(Color.theme.background)
                     .listRowSeparator(.hidden)
+                    .onTapGesture {
+                        segue(coin: coin)
+                    }
             }
         }
         .scrollIndicators(.hidden)
