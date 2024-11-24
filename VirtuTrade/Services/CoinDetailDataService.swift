@@ -26,7 +26,6 @@ class CoinDetailDataService {
             return 
         }
         
-        print("DEBUG: Fetching details for coin: \(coin.id)")
         
         coinDetailSubscription = NetworkingManager.download(url: url)
             .decode(type: CoinDetailModel.self, decoder: JSONDecoder())

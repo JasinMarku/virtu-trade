@@ -23,7 +23,7 @@ struct DetailLoadingView: View {
 
 struct DetailView: View {
     
-    @State private var expandDescription: Bool = false
+    @State private var showDescriptionSheet: Bool = false
     @StateObject private var vm: DetailViewModel
     private let columns: [GridItem] = [
         GridItem(.flexible()),
@@ -41,7 +41,6 @@ struct DetailView: View {
                 .ignoresSafeArea()
             
         ScrollView {
-                
                 VStack(spacing: 20) {
                     ChartView(coin: vm.coin)
                         .padding(.vertical)
@@ -50,16 +49,7 @@ struct DetailView: View {
                     
                     Divider()
                     
-                        if let coinDescription = vm.coinDescription,
-                            !coinDescription.isEmpty {
-                            VStack(alignment: .leading) {
-                                Text(coinDescription)
-                                    .lineLimit(3)
-                                    .font(.callout)
-                                    .foregroundStyle(Color.theme.secondaryText)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
+                    descriptionSection
                     
                     overviewGrid
                     
@@ -226,6 +216,44 @@ struct ChartView: View {
 }
 
 extension DetailView {
+    
+    private var descriptionSection: some View {
+          Group {
+              if let coinDescription = vm.coinDescription,
+                 !coinDescription.isEmpty {
+                  VStack(alignment: .leading, spacing: 10) {
+                      HStack {
+                          Text("About \(vm.coin.name)")
+                              .font(.headline)
+                              .foregroundStyle(Color.theme.accent)
+                          
+                          Spacer()
+                          
+                          Button {
+                              showDescriptionSheet = true
+                          } label: {
+                              HStack(spacing: 4) {
+                                  Text("View More")
+                                  Image(systemName: "chevron.right")
+                              }
+                              .font(.callout)
+                              .foregroundStyle(Color.theme.secondaryText)
+                          }
+                      }
+                      
+                      Text(coinDescription)
+                          .lineLimit(3)
+                          .font(.callout)
+                          .foregroundStyle(Color.theme.secondaryText)
+                  }
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .sheet(isPresented: $showDescriptionSheet) {
+                      DescriptionView(coin: vm.coin, description: vm.coinDescription ?? "", redditURL: vm.redditURL, websiteURL: vm.websiteURL)
+                  }
+              }
+          }
+      }
+    
     private var overviewTitle: some View {
         Text("Overview")
             .font(.title.bold())
