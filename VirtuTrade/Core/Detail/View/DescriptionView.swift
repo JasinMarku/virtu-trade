@@ -14,62 +14,69 @@ struct DescriptionView: View {
     let websiteURL: String?
     
     var body: some View {
-        ZStack {
-            Color.theme.background
-                .ignoresSafeArea()
-            VStack(alignment: .leading, spacing: 15) {
-                    Text("About \(coin.name)")
-                        .font(.title.bold())
-                        .foregroundStyle(Color.primary)
-                
-                VStack(alignment: .leading, spacing: 7) {
-                        Text("Resources")
-                        .font(.title3).bold()
+        NavigationStack {
+            ZStack {
+                Color.theme.background
+                    .ignoresSafeArea()
+                VStack(alignment: .leading, spacing: 15) {
+                        Text("About \(coin.name)")
+                            .font(.title.bold())
                             .foregroundStyle(Color.primary)
-                        
-                    VStack(alignment: .leading) {
-                        HStack(alignment: .center, spacing: 12) {
-                            Image("reddit")
-                                .resizable()
-                                .renderingMode(.template)
-                                .foregroundStyle(Color.theme.accentTwo)
-                                .frame(width: 17, height: 17)
-                            if let redditURL = redditURL, let url = URL(string: redditURL) {
-                                Link("Reddit", destination: url)
-                                    .font(.body)
-                                    .fontWeight(.medium)
+                    
+                    VStack(alignment: .leading, spacing: 7) {
+                            Text("Resources")
+                            .font(.title3).bold()
+                                .foregroundStyle(Color.primary)
+                            
+                        VStack(alignment: .leading) {
+                            HStack(alignment: .center, spacing: 12) {
+                                Image("reddit")
+                                    .resizable()
+                                    .renderingMode(.template)
                                     .foregroundStyle(Color.theme.accentTwo)
+                                    .frame(width: 17, height: 17)
+                                if let redditURL = redditURL, let url = URL(string: redditURL) {
+                                    Link("Reddit", destination: url)
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(Color.theme.accentTwo)
+                                }
                             }
-                        }
-                        
-                        HStack(alignment: .center, spacing: 12) {
-                            Image("url")
-                                .resizable()
-                                .renderingMode(.template)
-                                .foregroundStyle(Color.theme.accentTwo)
-                                .frame(width: 17, height: 17)
-                            if let websiteURL = websiteURL, let url = URL(string: websiteURL) {
-                                Link("Website", destination: url)
-                                    .font(.body)
-                                    .fontWeight(.medium)
+                            
+                            HStack(alignment: .center, spacing: 12) {
+                                Image("url")
+                                    .resizable()
+                                    .renderingMode(.template)
                                     .foregroundStyle(Color.theme.accentTwo)
+                                    .frame(width: 17, height: 17)
+                                if let websiteURL = websiteURL, let url = URL(string: websiteURL) {
+                                    Link("Website", destination: url)
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(Color.theme.accentTwo)
+                                }
                             }
                         }
                     }
+                    
+                    Divider()
+                    
+                    Text(description)
+                        .font(.body)
+                        .foregroundStyle(Color.primary)
+                    
+                    Divider()
+                    
+                    Spacer()
                 }
-                
-                Divider()
-                
-                Text(description)
-                    .font(.body)
-                    .foregroundStyle(Color.primary)
-                
-                Divider()
-                
-                Spacer()
+                .padding()
+                .padding(.top, 15)
             }
-            .padding()
-            .padding(.top, 15)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    XMarkButton()
+                }
+            }
         }
     }
 }
