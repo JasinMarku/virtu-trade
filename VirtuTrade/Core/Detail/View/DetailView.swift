@@ -23,6 +23,7 @@ struct DetailLoadingView: View {
 
 struct DetailView: View {
     
+    @State private var expandDescription: Bool = false
     @StateObject private var vm: DetailViewModel
     private let columns: [GridItem] = [
         GridItem(.flexible()),
@@ -30,7 +31,7 @@ struct DetailView: View {
     ]
     private let spacing: CGFloat = 30
     
-    init(coin: CoinModel) {
+    init(coin: CoinModel, mockDetailData: CoinDetailModel? = nil) {
         _vm = StateObject(wrappedValue: DetailViewModel(coin: coin))
     }
     
@@ -49,6 +50,17 @@ struct DetailView: View {
                     
                     Divider()
                     
+                        if let coinDescription = vm.coinDescription,
+                            !coinDescription.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text(coinDescription)
+                                    .lineLimit(3)
+                                    .font(.callout)
+                                    .foregroundStyle(Color.theme.secondaryText)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    
                     overviewGrid
                     
                     additionalTitle
@@ -58,7 +70,7 @@ struct DetailView: View {
                     additionalGrid
                 }
                 .padding()
-                .padding(.top, -10)
+                .padding(.top, -15)
             }
         }
         .scrollIndicators(.hidden)
@@ -182,7 +194,7 @@ struct ChartView: View {
             }
             .frame(height: 200)
             .foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)
-            .shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red, radius: /*@START_MENU_TOKEN@*/10/*@END_MENU_TOKEN@*/)
+            .shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red, radius: 10, x: 0, y: 11)
             .overlay(
                 GeometryReader { proxy in
                         Rectangle()
