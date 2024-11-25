@@ -54,6 +54,8 @@ struct HomeView: View {
             .animation(.easeInOut, value: showPortfolio)
             .sheet(isPresented: $showSettingsView) {
                 SettingsView()
+                    .presentationDetents([.fraction(4/5)])
+                
             }
         }
         .navigationDestination(isPresented: $showDetailView) {
