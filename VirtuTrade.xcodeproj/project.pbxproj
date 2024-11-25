@@ -40,6 +40,7 @@
 		95609AA52CF29BAF00185EBD /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95609AA42CF29BAF00185EBD /* String.swift */; };
 		95609AA92CF3C62400185EBD /* DescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95609AA82CF3C62400185EBD /* DescriptionView.swift */; };
 		95609AAD2CF3DF0300185EBD /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95609AAC2CF3DF0300185EBD /* SettingsView.swift */; };
+		95609AB22CF51BB600185EBD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 95609AB12CF51BB600185EBD /* LaunchScreen.storyboard */; };
 		959A3BBF2CD00B7500BF074B /* PortfolioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 959A3BBE2CD00B7500BF074B /* PortfolioView.swift */; };
 		959A3BC12CD00E3E00BF074B /* XMarkButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 959A3BC02CD00E3E00BF074B /* XMarkButton.swift */; };
 		959A3BC32CD010DF00BF074B /* CoinLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 959A3BC22CD010DF00BF074B /* CoinLogoView.swift */; };
@@ -80,6 +81,7 @@
 		95609AA42CF29BAF00185EBD /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		95609AA82CF3C62400185EBD /* DescriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DescriptionView.swift; sourceTree = "<group>"; };
 		95609AAC2CF3DF0300185EBD /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		95609AB12CF51BB600185EBD /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		959A3BBE2CD00B7500BF074B /* PortfolioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioView.swift; sourceTree = "<group>"; };
 		959A3BC02CD00E3E00BF074B /* XMarkButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMarkButton.swift; sourceTree = "<group>"; };
 		959A3BC22CD010DF00BF074B /* CoinLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinLogoView.swift; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 		9524C3B32CC18FA400EB6E59 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				95609AAF2CF51BA000185EBD /* Launch */,
 				9524C3B92CC1915900EB6E59 /* Components */,
 				9524C3B42CC18FB700EB6E59 /* Home */,
 				952338B52CE14E1900D42FF5 /* Detail */,
@@ -291,6 +294,22 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		95609AAF2CF51BA000185EBD /* Launch */ = {
+			isa = PBXGroup;
+			children = (
+				95609AB02CF51BAD00185EBD /* Views */,
+			);
+			path = Launch;
+			sourceTree = "<group>";
+		};
+		95609AB02CF51BAD00185EBD /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				95609AB12CF51BB600185EBD /* LaunchScreen.storyboard */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -349,6 +368,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95609AB22CF51BB600185EBD /* LaunchScreen.storyboard in Resources */,
 				9524C3A62CC179B000EB6E59 /* Preview Assets.xcassets in Resources */,
 				9524C3A32CC179B000EB6E59 /* Assets.xcassets in Resources */,
 			);
@@ -534,6 +554,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = VirtuTrade;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.storyboard;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -563,6 +584,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = VirtuTrade;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen.storyboard;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
