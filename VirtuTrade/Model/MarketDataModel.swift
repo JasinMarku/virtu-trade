@@ -170,10 +170,12 @@ struct GlobalData: Codable {
     let data: MarketDataModel?
 }
 
+// Represents the market data model fetched from the API.
 struct MarketDataModel: Codable {
     let totalMarketCap, totalVolume, marketCapPercentage: [String: Double]
     let marketCapChangePercentage24HUsd: Double
     
+    // Maps JSON keys to Swift property names for decoding.
     enum CodingKeys: String, CodingKey {
         case totalMarketCap = "total_market_cap"
         case totalVolume = "total_volume"
@@ -181,6 +183,7 @@ struct MarketDataModel: Codable {
         case marketCapChangePercentage24HUsd = "market_cap_change_percentage_24h_usd"
     }
     
+    // Computed property to retrieve and format total market cap in USD.
     var marketCap: String {
         if let item = totalMarketCap.first(where: { $0.key == "usd" }) {
             return "$" + item.value.formattedWithAbbreviations()
@@ -188,6 +191,7 @@ struct MarketDataModel: Codable {
         return ""
     }
     
+    // Computed property to retrieve and format total volume in USD.
     var volume: String {
         if let item = totalVolume.first(where: { $0.key == "usd" }) {
             return "$" + item.value.formattedWithAbbreviations()
@@ -195,6 +199,7 @@ struct MarketDataModel: Codable {
         return ""
     }
      
+    // Computed property to retrieve and format Bitcoin dominance as a percentage.
     var btcDominance: String {
         if let item = marketCapPercentage.first(where: { $0.key == "btc" }) {
             return item.value.asPercentString()

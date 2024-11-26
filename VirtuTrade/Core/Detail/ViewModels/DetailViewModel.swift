@@ -10,39 +10,48 @@ import Combine
 
 class DetailViewModel: ObservableObject {
     
-    @Published var overviewStatistics: [StatisticModel] = []
-    @Published var additionalStatistics: [StatisticModel] = []
-    @Published var coinDescription: String? = nil
-    @Published var websiteURL: String? = nil
-    @Published var redditURL: String? = nil
+    // Published properties to update UI with coin details and statistics
+    @Published var overviewStatistics: [StatisticModel] = [] // Key overview statistics (e.g., price, market cap)
+    @Published var additionalStatistics: [StatisticModel] = [] // Additional details (e.g., block time, 24h high/low)
+    @Published var coinDescription: String? = nil // Coin description from API
+    @Published var websiteURL: String? = nil // Official website URL
+    @Published var redditURL: String? = nil // Subreddit URL
     
-    @Published var coin: CoinModel
-    private let coinDetailService: CoinDetailDataService
-    private var cancellables = Set<AnyCancellable>()
+    @Published var coin: CoinModel // Coin model passed to initialize this ViewModel
+    private let coinDetailService: CoinDetailDataService // Service to fetch coin details
+    private var cancellables = Set<AnyCancellable>() // Store Combine subscriptions
     
+    // MARK: - Initialization
     init(coin: CoinModel) {
         self.coin = coin
         self.coinDetailService = CoinDetailDataService(coin: coin)
-        self.addSubscribers()
+        self.addSubscribers() // Subscribe to service data updates
     }
     
+    // MARK: - Subscribers
     private func addSubscribers() {
+        // Listen for updates to coin details and process them
         coinDetailService.$coinDetails
             .sink { [weak self] returnedCoinDetails in
+                // Update the UI properties with data from the API
                 self?.coinDescription = returnedCoinDetails?.readableDescription
                 self?.websiteURL = returnedCoinDetails?.links?.homepage?.first
                 self?.redditURL = returnedCoinDetails?.links?.subredditURL
                 
+                // Generate and assign statistics based on the fetched details
                 if let returnedCoinDetails = returnedCoinDetails {
                     let overviewStats = self?.mapDataToStatistics(coinModel: self?.coin, coinDetailModel: returnedCoinDetails)
                     self?.overviewStatistics = overviewStats?.overview ?? []
                     self?.additionalStatistics = overviewStats?.additional ?? []
                 }
             }
-            .store(in: &cancellables)
+            .store(in: &cancellables) // Retain the subscription
     }
     
+    // MARK: - Data Mapping
+    /// Maps the coin details to displayable statistics
     private func mapDataToStatistics(coinModel: CoinModel?, coinDetailModel: CoinDetailModel) -> (overview: [StatisticModel], additional: [StatisticModel]) {
+        // Overview statistics
         let price = coinModel?.currentPrice ?? 0
         let priceChange = coinModel?.priceChangePercentage24H ?? 0
         let priceStat = StatisticModel(title: "Current Price", value: price.asCurrencyWith6Decimals(), percentageChange: priceChange)
@@ -58,10 +67,9 @@ class DetailViewModel: ObservableObject {
         let volume = coinModel?.totalVolume ?? 0
         let volumeStat = StatisticModel(title: "Volume", value: volume.formattedWithAbbreviations())
         
-        let overview: [StatisticModel] = [
-            priceStat, marketCapStat, rankStat, volumeStat
-        ]
+        let overview: [StatisticModel] = [priceStat, marketCapStat, rankStat, volumeStat]
         
+        // Additional statistics
         let high = coinModel?.high24H ?? 0
         let highStat = StatisticModel(title: "24h High", value: high.asCurrencyWith6Decimals())
         
@@ -83,9 +91,7 @@ class DetailViewModel: ObservableObject {
         let hashing = coinDetailModel.hashingAlgorithm ?? "n/a"
         let hashingStat = StatisticModel(title: "Hashing Algorithm", value: hashing)
         
-        let additional: [StatisticModel] = [
-            highStat, lowStat, priceChangeStat, marketCapChangeStat, blockStat, hashingStat
-        ]
+        let additional: [StatisticModel] = [highStat, lowStat, priceChangeStat, marketCapChangeStat, blockStat, hashingStat]
         
         return (overview: overview, additional: additional)
     }
