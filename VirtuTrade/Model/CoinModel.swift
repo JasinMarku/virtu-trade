@@ -94,14 +94,18 @@ struct CoinModel: Identifiable, Codable {
     }
     
     func updateHoldings(amount: Double) -> CoinModel {
+        // Returns a new CoinModel instance with updated holdings.
+        // This is useful for updating portfolio data without modifying the original object.
         return CoinModel(id: id, symbol: symbol, name: name, image: image, currentPrice: currentPrice, marketCap: marketCap, marketCapRank: marketCapRank, fullyDilutedValuation: fullyDilutedValuation, totalVolume: totalVolume, high24H: high24H, low24H: low24H, priceChange24H: priceChange24H, priceChangePercentage24H: priceChangePercentage24H, marketCapChange24H: marketCapChange24H, marketCapChangePercentage24H: marketCapChangePercentage24H, circulatingSupply: circulatingSupply, totalSupply: totalSupply, maxSupply: maxSupply, ath: ath, athChangePercentage: athChangePercentage, athDate: athDate, atl: atl, atlChangePercentage: atlChangePercentage, atlDate: atlDate, lastUpdated: lastUpdated, sparklineIn7D: sparklineIn7D, priceChangePercentage24HInCurrency: priceChangePercentage24HInCurrency, currentHoldings: amount)
     }
     
     var currentHoldingsValue: Double {
+        // Calculates the total value of the holdings based on the current price./
         return (currentHoldings ?? 0) * currentPrice
     }
     
     var rank: Int {
+        // Returns the market cap rank of the coin as an integer.
         return Int(marketCapRank ?? 0)
     }
     
@@ -109,4 +113,6 @@ struct CoinModel: Identifiable, Codable {
 
 struct SparklineIn7D: Codable {
     let price: [Double]?
+    // Represents the 7-day price trend of the coin.
+    // The `price` array contains historical price data.
 }
