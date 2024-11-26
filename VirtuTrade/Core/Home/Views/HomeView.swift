@@ -45,8 +45,15 @@ struct HomeView: View {
                 }
                 
                 if showPortfolio {
-                    portfolioCoinsList
-                        .transition(.move(edge: .trailing))
+                    ZStack(alignment: .top) {
+                        if vm.portfolioCoins.isEmpty && vm.searchText.isEmpty {
+                            EmptyStatePortfolio()
+                                .frame(height: 300)
+                        } else {
+                            portfolioCoinsList
+                                .transition(.move(edge: .trailing))
+                        }
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -77,6 +84,10 @@ extension HomeView {
     private var homeHeader: some View {
         HStack {
             Button(action: {
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.prepare()
+                impact.impactOccurred()
+                
                 if showPortfolio {
                     showPortfolioView.toggle()
                 } else {
@@ -97,6 +108,10 @@ extension HomeView {
             Spacer()
             
             Button(action: {
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.prepare()
+                impact.impactOccurred()
+                
                 showPortfolio.toggle()
             }, label: {
                 CircleButtonView(iconName: "chevron.right")
@@ -121,6 +136,10 @@ extension HomeView {
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
                 .onTapGesture {
+                    let impact = UIImpactFeedbackGenerator(style: .soft)
+                    impact.prepare()
+                    impact.impactOccurred()
+                    
                     segue(coin: coin)
                 }
             }
@@ -141,6 +160,10 @@ extension HomeView {
                     .listRowBackground(Color.theme.background)
                     .listRowSeparator(.hidden)
                     .onTapGesture {
+                        let impact = UIImpactFeedbackGenerator(style: .soft)
+                        impact.prepare()
+                        impact.impactOccurred()
+                        
                         segue(coin: coin)
                     }
             }
@@ -158,6 +181,10 @@ extension HomeView {
                     .rotationEffect(Angle(degrees: vm.sortOption == .rank ? 0 : 180))
             }
             .onTapGesture {
+                let impact = UIImpactFeedbackGenerator(style: .soft)
+                 impact.prepare()
+                 impact.impactOccurred()
+                
                 withAnimation(.default) {
                     vm.sortOption = vm.sortOption == .rank ? .rankReversed : .rank
                 }

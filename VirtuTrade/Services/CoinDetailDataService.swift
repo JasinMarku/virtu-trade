@@ -26,17 +26,11 @@ class CoinDetailDataService {
             return 
         }
         
-        
         coinDetailSubscription = NetworkingManager.download(url: url)
             .decode(type: CoinDetailModel.self, decoder: JSONDecoder())
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    print("DEBUG: Successfully completed coin details request")
-                case .failure(let error):
-                    print("DEBUG: Failed to fetch coin details: \(error)")
-                }
-            }, receiveValue: { [weak self] (returnedCoinDetails) in
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: NetworkingManager.handleCompletion, receiveValue: { [weak self] (returnedCoinDetails)
+                    in
                 self?.coinDetails = returnedCoinDetails
                 self?.coinDetailSubscription?.cancel()
             })

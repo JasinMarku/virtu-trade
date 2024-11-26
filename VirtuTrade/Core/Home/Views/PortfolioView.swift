@@ -5,6 +5,7 @@
 //  Created by Jasin ‎ on 10/28/24.
 //
 
+import UIKit
 import SwiftUI
 
 struct PortfolioView: View {
@@ -12,7 +13,6 @@ struct PortfolioView: View {
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
     @State private var quantityText: String = ""
-    @State private var showCheckmark: Bool = false
         
     var body: some View {
         NavigationStack {
@@ -33,7 +33,15 @@ struct PortfolioView: View {
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
-                    trailingNavBarButtons
+                    Button {
+                        saveButtonPressed()
+                    } label: {
+                        Text("Save")
+                    }
+                    .opacity(selectedCoin != nil &&
+                             selectedCoin?.currentHoldings != Double(quantityText) ? 1.0 : 0.0
+                    )
+                    .font(.headline)
                 }
             }
             .onChange(of: vm.searchText) {
@@ -52,6 +60,7 @@ struct PortfolioView: View {
 }
 
 extension PortfolioView {
+    
     private var coinLogoList: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 10) {
@@ -94,36 +103,92 @@ extension PortfolioView {
     }
     
     private var portfolioInputSection: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
+            // Coin Header
             HStack {
-                Text("Current Price of \(selectedCoin?.symbol.uppercased() ?? ""):")
+                AsyncImage(url: URL(string: selectedCoin?.image ?? "")) { image in
+                    image.resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 40, height: 40)
+                } placeholder: {
+                    Color.gray.opacity(0.2)
+                }
+                .frame(width: 40, height: 40)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(selectedCoin?.name ?? "")
+                        .font(.headline)
+                    Text(selectedCoin?.symbol.uppercased() ?? "")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
                 Spacer()
+                
                 Text(selectedCoin?.currentPrice.asCurrencyWith6Decimals() ?? "")
+                    .font(.title3)
+                    .fontWeight(.semibold)
             }
-            Divider()
-            HStack {
-                Text("Amount Holding:")
-                Spacer()
-                TextField("Ex: 1.4", text: $quantityText)
-                    .multilineTextAlignment(.trailing)
-                    .keyboardType(.decimalPad)
+            .padding()
+            .background(Color.theme.accent.opacity(0.1))
+            
+            // Input Section
+            VStack(spacing: 15) {
+                // Amount Holding
+                HStack {
+                    Text("Amount")
+                        .foregroundColor(.secondary)
+                        .fontWeight(.medium)
+                        .fontDesign(.rounded)
+                    
+                    Spacer()
+                    
+                    TextField("0.00", text: $quantityText)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.decimalPad)
+                        .font(.title3)
+                        .foregroundColor(.primary)
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.theme.accent.opacity(0.05))
+                )
+                
+                // Current Value
+                HStack {
+                    Text("Total Value")
+                        .foregroundColor(.secondary)
+                        .fontWeight(.medium)
+                        .fontDesign(.rounded)
+                    
+                    Spacer()
+                    
+                    Text(getCurrentValue().asCurrencyWith2Decimals())
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(Color.theme.accent)
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.theme.accent.opacity(0.05))
+                )
             }
-            Divider()
-            HStack {
-                Text("Current Value:")
-                Spacer()
-                Text(getCurrentValue().asCurrencyWith2Decimals())
-            }
+            .padding()
         }
-    .padding()
-    .font(.headline)
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.theme.accent.opacity(0.2), lineWidth: 1)
+        )
+        .padding()
+        .animation(.easeInOut, value: quantityText)
     }
     
     private var trailingNavBarButtons: some View {
         HStack(spacing: 10) {
-            Image(systemName: "checkmark")
-                .opacity(showCheckmark ? 1.0 : 0.0)
-            
             Button(action: {
                 saveButtonPressed()
             }, label: {
@@ -137,28 +202,22 @@ extension PortfolioView {
     }
     
     private func saveButtonPressed() {
-        guard 
+        guard
             let coin = selectedCoin,
             let amount = Double(quantityText)
-            else { return }
+                else { return }
         
-        // save to portfolio
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.prepare()
+        impact.impactOccurred()
+        
         vm.updatePortfolio(coin: coin, amount: amount)
         
         withAnimation(.easeIn) {
-            showCheckmark = true
             removeSelectedCoin()
         }
         
-        // hide keyboard
         dismissKeyboard()
-        
-        // hide checkmark
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation(.easeOut) {
-                showCheckmark = false
-            }
-        }
     }
     
     private func removeSelectedCoin() {
