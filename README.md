@@ -12,8 +12,6 @@ Cryptocurrency Tracking and Virtual Trading App that allows users to monitor cry
 - Portfolio performance tracking
 - Dark/Light mode support
 
-https://github.com/user-attachments/assets/3e3b3388-e72a-4faa-836a-f7244e0dc18f
-
 ## Core Technologies
 - Swift 5
 - SwiftUI
