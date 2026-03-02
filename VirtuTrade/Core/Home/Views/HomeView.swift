@@ -15,20 +15,17 @@ struct HomeView: View {
     @State private var showSettingsView: Bool = false
     @State private var selectedCoin: CoinModel? = nil
     @State private var showDetailView: Bool = false
+    @State private var portfolioEditorCoin: CoinModel? = nil
     
     var body: some View {
         ZStack {
             // Background Layer
             Color.theme.background
                 .ignoresSafeArea()
-                .sheet(isPresented: $showPortfolioView, content: {
-                    PortfolioView()
-                        .environmentObject(vm)
-                        .presentationBackground(Color.theme.background)
-                })
             
             // Content Layer
             VStack {
+                
                 homeHeader
                 
                 HomeStatsView(showPortfolio: $showPortfolio)
@@ -59,6 +56,12 @@ struct HomeView: View {
                 Spacer(minLength: 0)
             }
             .animation(.easeInOut, value: showPortfolio)
+            .sheet(isPresented: $showPortfolioView, onDismiss: {
+                portfolioEditorCoin = nil
+            }, content: {
+                PortfolioView()
+                    .environmentObject(vm)
+            })
             .sheet(isPresented: $showSettingsView) {
                 SettingsView()
                     .presentationDetents([.fraction(4/5)])
@@ -89,6 +92,7 @@ extension HomeView {
                 impact.impactOccurred()
                 
                 if showPortfolio {
+                    portfolioEditorCoin = nil
                     showPortfolioView.toggle()
                 } else {
                     showSettingsView.toggle()
@@ -168,10 +172,67 @@ extension HomeView {
                         
                         segue(coin: coin)
                     }
+                    .contextMenu {
+                        Button {
+                            editPortfolioHolding(coin)
+                        } label: {
+                            HStack {
+                                Image(systemName: "pencil")
+                                Text("Edit")
+                            }
+                        }
+
+                        Button(role: .destructive) {
+                            deletePortfolioHolding(coin)
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("Delete")
+                            }
+                        }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        Button {
+                            editPortfolioHolding(coin)
+                        } label: {
+                            HStack {
+                                Image(systemName: "pencil")
+                                Text("Edit")
+                            }
+                        }
+                        .tint(Color.theme.accent)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            deletePortfolioHolding(coin)
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("Delete")
+                            }
+                        }
+                    }
             }
         }
         .scrollIndicators(.hidden)
         .listStyle(.plain)
+    }
+
+    private func editPortfolioHolding(_ coin: CoinModel) {
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.prepare()
+        impact.impactOccurred()
+
+        portfolioEditorCoin = coin
+        showPortfolioView = true
+    }
+
+    private func deletePortfolioHolding(_ coin: CoinModel) {
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.prepare()
+        impact.impactOccurred()
+
+        vm.updatePortfolio(coin: coin, amount: 0)
     }
     
     private var columnTitles: some View {
@@ -229,3 +290,4 @@ extension HomeView {
 
     }
 }
+
