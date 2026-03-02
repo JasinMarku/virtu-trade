@@ -83,33 +83,13 @@ struct ChartView: View {
     
     @State private var selectedPrice: Double?
     @State private var selectedIndex: Int?
-    @State private var plotWidth: CGFloat = 0
     
     private let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-    private let selectionGenerator = UISelectionFeedbackGenerator()
     
     @State private var previousIndex: Int?
     
     private var priceData: [Double] {
         coin.sparklineIn7D?.price ?? []
-    }
-    
-    // Price Calculations
-    private var minPrice: Double {
-        priceData.min() ?? 0
-    }
-    
-    private var maxPrice: Double {
-        priceData.max() ?? 0
-    }
-    
-    private var priceChange: Double {
-        let prices = coin.sparklineIn7D?.price ?? []
-        guard let firstPrice = prices.first,
-              let lastPrice = prices.last else {
-            return 0
-        }
-        return lastPrice - firstPrice
     }
     
     private var displayPrice: Double {
@@ -120,12 +100,13 @@ struct ChartView: View {
         let calendar = Calendar.current
         let selectedDate: Date
         
-        if let index = selectedIndex {
+        if let index = selectedIndex, !priceData.isEmpty {
             // Calculate date for dragging
             let endDate = Date()
+            let hoursPerDataPoint = 168.0 / Double(priceData.count)
             guard let startDate = calendar.date(byAdding: .day, value: -7, to: endDate),
                   let date = calendar.date(byAdding: .hour,
-                                         value: Int(Double(index) * (168.0 / Double(priceData.count))),
+                                         value: Int(Double(index) * hoursPerDataPoint),
                                          to: startDate) else { return "" }
             selectedDate = date
         } else {
@@ -159,7 +140,7 @@ struct ChartView: View {
             }
             
             Chart {
-                ForEach(Array(zip(coin.sparklineIn7D?.price ?? [], 0...168)), id: \.1) { price, index in
+                ForEach(Array(priceData.enumerated()), id: \.offset) { index, price in
                     LineMark(
                         x: .value("Time", index),
                         y: .value("Price", price)
@@ -187,13 +168,19 @@ struct ChartView: View {
             .shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red, radius: 10, x: 0, y: 11)
             .overlay(
                 GeometryReader { proxy in
-                        Rectangle()
+                    Rectangle()
                         .fill(.clear)
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
-                                    let index = Int((value.location.x / proxy.size.width) * CGFloat(priceData.count))
+                                    guard !priceData.isEmpty, proxy.size.width > 0 else { return }
+
+                                    let clampedX = min(max(value.location.x, 0), proxy.size.width)
+                                    let normalizedX = clampedX / proxy.size.width
+                                    let scaledIndex = normalizedX * CGFloat(max(priceData.count - 1, 0))
+                                    let index = Int(scaledIndex.rounded(.towardZero))
+
                                     if index >= 0 && index < priceData.count {
                                         if index != previousIndex {
                                             impactGenerator.impactOccurred()

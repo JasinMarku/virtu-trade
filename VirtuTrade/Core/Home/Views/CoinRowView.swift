@@ -59,7 +59,7 @@ extension CoinRowView {
         VStack(alignment: .trailing, spacing: 6) {
             Text("\(coin.currentHoldingsValue, format: .currency(code: "USD"))")
                 .bold()
-            Text(String(format: "%.2f", coin.currentHoldings ?? ""))
+            Text(String(format: "%.2f", coin.currentHoldings ?? 0))
         }
         .foregroundStyle(Color.primary.opacity(0.5))
     }

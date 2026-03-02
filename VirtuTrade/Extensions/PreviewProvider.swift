@@ -15,6 +15,7 @@ extension PreviewProvider {
     }
 }
 
+@MainActor
 class DeveloperPreview {
     
     static let instance = DeveloperPreview()
@@ -226,3 +227,4 @@ class DeveloperPreview {
        priceChangePercentage24HInCurrency: 3952.64,
        currentHoldings: 1.5)
 }
+

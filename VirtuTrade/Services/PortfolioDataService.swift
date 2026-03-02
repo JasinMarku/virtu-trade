@@ -7,8 +7,14 @@
 
 import Foundation
 import CoreData
+import os
 
-class PortfolioDataService {
+@MainActor
+final class PortfolioDataService {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "me.marku.jasin.VirtuTrade",
+        category: "PortfolioDataService"
+    )
     
     // Core Data container and configuration
     private let container: NSPersistentContainer
@@ -21,11 +27,18 @@ class PortfolioDataService {
     // Initializes the Core Data container and loads the saved portfolio
     init() {
         container = NSPersistentContainer(name: containerName)
-        container.loadPersistentStores { _, error in
-            if let error = error {
-                print("Error Loading Core Data! \(error)")
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        container.viewContext.automaticallyMergesChangesFromParent = true
+
+        container.loadPersistentStores { [weak self] _, error in
+            guard let self else { return }
+            if let error {
+                self.logger.error("Error loading Core Data persistent stores: \(error.localizedDescription, privacy: .public)")
             }
-            self.getPortfolio() // Load initial portfolio data
+
+            Task { @MainActor in
+                self.getPortfolio() // Load initial portfolio data
+            }
         }
     }
     
@@ -42,7 +55,7 @@ class PortfolioDataService {
             } else {
                 delete(entity: entity)
             }
-        } else {
+        } else if amount > 0 {
             add(coin: coin, amount: amount)
         }
     }
@@ -55,7 +68,7 @@ class PortfolioDataService {
         do {
             savedEntities = try container.viewContext.fetch(request)
         } catch let error {
-            print("Error Fetching Portfolio Entities: \(error)")
+            logger.error("Error fetching portfolio entities: \(error.localizedDescription, privacy: .public)")
         }
     }
     
@@ -88,10 +101,11 @@ class PortfolioDataService {
     
     /// Saves changes to the Core Data context.
     private func save() {
+        guard container.viewContext.hasChanges else { return }
         do {
             try container.viewContext.save()
         } catch let error {
-            print("Error saving to CoreData: \(error)")
+            logger.error("Error saving Core Data context: \(error.localizedDescription, privacy: .public)")
         }
     }
 

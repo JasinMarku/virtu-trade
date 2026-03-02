@@ -66,7 +66,7 @@ struct HomeView: View {
             }
         }
         .navigationDestination(isPresented: $showDetailView) {
-            if selectedCoin != nil {
+            if let _ = selectedCoin {
                 DetailLoadingView(coin: $selectedCoin)
             }
         }
@@ -97,6 +97,7 @@ extension HomeView {
                 CircleButtonView(iconName: showPortfolio ? "plus" : "info")
                     .animation(.none, value: showPortfolio)
             })
+            .accessibilityLabel(showPortfolio ? "Add Portfolio Asset" : "Open Settings")
             
             Spacer()
             
@@ -118,6 +119,7 @@ extension HomeView {
                     .rotationEffect(Angle(degrees: showPortfolio ? 180 : 0))
                     .animation(.easeInOut, value: showPortfolio)
             })
+            .accessibilityLabel(showPortfolio ? "Show Live Prices" : "Show Portfolio")
         }
         .padding(.horizontal)
     }

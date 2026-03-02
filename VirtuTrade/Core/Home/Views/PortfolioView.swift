@@ -13,6 +13,15 @@ struct PortfolioView: View {
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
     @State private var quantityText: String = ""
+    
+    private var quantityAmount: Double? {
+        Double(quantityText.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+    
+    private var showSaveButton: Bool {
+        guard let selectedCoin else { return false }
+        return selectedCoin.currentHoldings != quantityAmount
+    }
         
     var body: some View {
         NavigationStack {
@@ -38,14 +47,12 @@ struct PortfolioView: View {
                     } label: {
                         Text("Save")
                     }
-                    .opacity(selectedCoin != nil &&
-                             selectedCoin?.currentHoldings != Double(quantityText) ? 1.0 : 0.0
-                    )
+                    .opacity(showSaveButton ? 1.0 : 0.0)
                     .font(.headline)
                 }
             }
-            .onChange(of: vm.searchText) {
-                if vm.searchText.isEmpty {
+            .onChange(of: vm.searchText) { _, newValue in
+                if newValue.isEmpty {
                     removeSelectedCoin()
                 }
             }
@@ -87,16 +94,16 @@ extension PortfolioView {
     private func updateSelectedCoin(coin: CoinModel) {
         selectedCoin = coin
         
-       if let portfolioCoin = vm.portfolioCoins.first(where: {$0.id == coin.id }),
-          let amount = portfolioCoin.currentHoldings {
-           quantityText = "\(amount)"
-       } else {
-           quantityText = ""
-       }
+        if let portfolioCoin = vm.portfolioCoins.first(where: { $0.id == coin.id }),
+           let amount = portfolioCoin.currentHoldings {
+            quantityText = "\(amount)"
+        } else {
+            quantityText = ""
+        }
     }
     
     private func getCurrentValue() -> Double {
-        if let quantity = Double(quantityText) {
+        if let quantity = quantityAmount {
             return quantity * (selectedCoin?.currentPrice ?? 0)
         }
         return 0
@@ -187,24 +194,10 @@ extension PortfolioView {
         .animation(.easeInOut, value: quantityText)
     }
     
-    private var trailingNavBarButtons: some View {
-        HStack(spacing: 10) {
-            Button(action: {
-                saveButtonPressed()
-            }, label: {
-                Text("Save")
-            }).opacity(
-                selectedCoin != nil &&
-                selectedCoin?.currentHoldings != Double(quantityText)
-                ? 1.0 : 0.0)
-        }
-        .font(.headline)
-    }
-    
     private func saveButtonPressed() {
         guard
             let coin = selectedCoin,
-            let amount = Double(quantityText)
+            let amount = quantityAmount
                 else { return }
         
         let impact = UIImpactFeedbackGenerator(style: .medium)

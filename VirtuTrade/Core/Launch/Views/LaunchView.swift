@@ -30,13 +30,13 @@ struct LaunchView: View {
             ZStack {
                 if showingLoadingText {
                     HStack(spacing: 0) {
-                        ForEach(0..<21) { index in
+                        ForEach(Array(loadingText.indices), id: \.self) { index in
                             Text(loadingText[index])
                                 .font(.headline)
                                 .fontWeight(.bold)
                                 .foregroundStyle(Color("IconAccent"))
                                 .fontDesign(.rounded)
-                                .offset(y: counter == index ? -5 : 0)
+                                .offset(y: counter == index ? -4 : 0)
                         }
                     }
                     .transition(AnyTransition.scale.animation(.easeIn))
@@ -46,9 +46,10 @@ struct LaunchView: View {
             .offset(y: 80)
         }
         .onAppear {
-            showingLoadingText.toggle()
+            showingLoadingText = true
         }
         .onReceive(timer, perform: { _ in
+            guard showLaunchView else { return }
             withAnimation(.spring()) {
                 let lastIndex = loadingText.count - 1
                 if counter == lastIndex {
