@@ -7,9 +7,14 @@
 
 import Foundation
 import SwiftUI
+import os
 
 /// A singleton class for managing local image storage in the app.
-class LocalFileManager {
+final class LocalFileManager {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "me.marku.jasin.VirtuTrade",
+        category: "LocalFileManager"
+    )
     
     static let instance = LocalFileManager() // Singleton instance
     private init() { } // Prevent external initialization
@@ -31,7 +36,7 @@ class LocalFileManager {
         do {
             try data.write(to: url)
         } catch let error {
-            print("Error saving image: \(error) \n Image Name: \(imageName)")
+            logger.error("Error saving image '\(imageName, privacy: .public)': \(error.localizedDescription, privacy: .public)")
         }
     }
     
@@ -58,7 +63,7 @@ class LocalFileManager {
             do {
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
             } catch let error {
-                print("Error creating directory: \(error) \n\n Folder Name: \(folderName)")
+                logger.error("Error creating folder '\(folderName, privacy: .public)': \(error.localizedDescription, privacy: .public)")
             }
         }
     }

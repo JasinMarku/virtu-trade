@@ -8,6 +8,7 @@
 import SwiftUI
 
 extension View {
+    @MainActor
     func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
@@ -35,6 +36,7 @@ struct SearchBarView: View {
             
             TextField("Search", text: $searchText)
                 .focused($isFocused)
+                .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
                 .fontWeight(.medium)
                 .overlay(

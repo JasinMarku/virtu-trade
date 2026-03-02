@@ -8,11 +8,17 @@
 import Foundation
 import SwiftUI
 import Combine
+import os
 
-class CoinImageService {
+final class CoinImageService {
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "me.marku.jasin.VirtuTrade",
+        category: "CoinImageService"
+    )
     
     // Published image that can be observed by the UI
-    @Published var image: UIImage? = nil
+    @Published private(set) var image: UIImage? = nil
+    @Published private(set) var isLoading: Bool = false
     
     // Private properties for managing image subscription and file storage
     private var imageSubscription: AnyCancellable?
@@ -32,6 +38,7 @@ class CoinImageService {
     private func getCoinImage() {
         if let savedImage = fileManager.getImage(imageName: imageName, folderName: folderName) {
             image = savedImage // Load from local storage
+            isLoading = false
         } else {
             downloadCoinImage() // Fetch from the network
         }
@@ -39,19 +46,32 @@ class CoinImageService {
     
     // Downloads the coin image from the provided URL
     private func downloadCoinImage() {
-        guard let url = URL(string: coin.image) else { return }
+        imageSubscription?.cancel()
+        isLoading = true
+
+        guard let url = URL(string: coin.image) else {
+            logger.error("Failed to construct coin image URL for coin id: \(self.coin.id, privacy: .public)")
+            isLoading = false
+            return
+        }
         
         imageSubscription = NetworkingManager.download(url: url)
-            .tryMap { data -> UIImage? in
-                UIImage(data: data) // Convert downloaded data into a UIImage
+            .tryMap { data -> UIImage in
+                guard let image = UIImage(data: data) else {
+                    throw NetworkingManager.NetworkingError.invalidImageData(url: url)
+                }
+                return image
             }
             .receive(on: DispatchQueue.main) // Ensure updates are made on the main thread
             .sink(
-                receiveCompletion: NetworkingManager.handleCompletion, // Handle completion or errors
+                receiveCompletion: { [weak self] completion in
+                    self?.isLoading = false
+                    NetworkingManager.handleCompletion(completion: completion)
+                    self?.imageSubscription = nil
+                }, // Handle completion or errors
                 receiveValue: { [weak self] downloadedImage in
-                    guard let self = self, let downloadedImage = downloadedImage else { return }
+                    guard let self else { return }
                     self.image = downloadedImage // Update the published image
-                    self.imageSubscription?.cancel() // Cancel subscription after successful fetch
                     self.fileManager.saveImage(
                         image: downloadedImage,
                         imageName: self.imageName,

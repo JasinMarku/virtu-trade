@@ -9,8 +9,15 @@ import SwiftUI
 
 struct SettingsView: View {
     
-    let coingeckoURL = URL(string: "https://www.coingecko.com")!
-    let repositoryURL = URL(string: "https://github.com/JasinMarku/virtu-trade")
+    private let coinGeckoURL = URL(string: "https://www.coingecko.com")
+    private let linkedInURL = URL(string: "https://www.linkedin.com/in/jasin-marku/")
+    private let githubURL = URL(string: "https://github.com/JasinMarku?tab=repositories")
+
+    private var appVersionText: String {
+        let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let buildVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return "Version \(shortVersion) (\(buildVersion))"
+    }
     
     var body: some View {
         NavigationStack {
@@ -59,10 +66,12 @@ extension SettingsView {
                         .font(.callout)
                         .fontWeight(.bold)
                     
-                    Link(destination: URL(string: "https://www.coingecko.com")!, label: {
-                        Text("via CoinGecko.com")
-                            .fontWeight(.medium)
-                    })
+                    if let coinGeckoURL {
+                        Link(destination: coinGeckoURL, label: {
+                            Text("via CoinGecko.com")
+                                .fontWeight(.medium)
+                        })
+                    }
                 }
                 .foregroundStyle(Color.theme.secondaryText)
             }
@@ -102,21 +111,27 @@ extension SettingsView {
                 Spacer()
                 
                 HStack(spacing: 20) {
-                    Link(destination: URL(string: "https://www.linkedin.com/in/jasin-marku/")!, label: {
-                        Image("linkedin")
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 30)
-                    })
+                    if let linkedInURL {
+                        Link(destination: linkedInURL, label: {
+                            Image("linkedin")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 30)
+                        })
+                        .accessibilityLabel("LinkedIn Profile")
+                    }
                     
-                    Link(destination: URL(string: "https://github.com/JasinMarku?tab=repositories")!, label: {
-                        Image("github")
-                            .renderingMode(.template)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 30)
-                    })
+                    if let githubURL {
+                        Link(destination: githubURL, label: {
+                            Image("github")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 30)
+                        })
+                        .accessibilityLabel("GitHub Profile")
+                    }
                 }
                 .padding(.trailing, 15)
             }
@@ -128,7 +143,7 @@ extension SettingsView {
     
     private var version: some View {
         HStack {
-            Text("Version 1.0")
+            Text(appVersionText)
                 .foregroundStyle(Color.theme.secondaryText)
                 .font(.body)
                 .fontWeight(.medium)

@@ -8,7 +8,8 @@
 import Foundation
 import Combine
 
-class HomeViewModel: ObservableObject {
+@MainActor
+final class HomeViewModel: ObservableObject {
     
     @Published var statistics: [StatisticModel] = []      // Stores key statistics (like market cap, volume) for display
     @Published var allCoins: [CoinModel] = []             // List of all available coins from the API
@@ -27,10 +28,10 @@ class HomeViewModel: ObservableObject {
     }
     
     init() {
-        addSubcribers()
+        addSubscribers()
     }
     
-    func addSubcribers() {
+    private func addSubscribers() {
         // Updates allCoins based on search text and API data
         $searchText
             .combineLatest(coinDataService.$allCoins, $sortOption)     // Combines searchText with allCoins from the API
@@ -96,13 +97,13 @@ class HomeViewModel: ObservableObject {
     private func sortCoins(sort: SortOption, coins: inout [CoinModel]) {
         switch sort {
         case .rank, .holdings:
-             coins.sort(by: { $0.rank < $1.rank })
+            coins.sort(by: { $0.rank < $1.rank })
         case .rankReversed, .holdingsReversed:
-             coins.sort(by: { $0.rank > $1.rank })
+            coins.sort(by: { $0.rank > $1.rank })
         case .price:
-             coins.sort(by: { $0.currentPrice < $1.currentPrice })
+            coins.sort(by: { $0.currentPrice < $1.currentPrice })
         case .priceReversed:
-             coins.sort(by: { $0.currentPrice > $1.currentPrice })
+            coins.sort(by: { $0.currentPrice > $1.currentPrice })
         }
     }
     
@@ -110,9 +111,9 @@ class HomeViewModel: ObservableObject {
         // will only sort by holdings or reversedHoldings if needed
         switch sortOption {
         case .holdings:
-            return coins.sorted(by: {$0.currentHoldingsValue > $1.currentHoldingsValue})
+            return coins.sorted(by: { $0.currentHoldingsValue > $1.currentHoldingsValue })
         case .holdingsReversed:
-            return coins.sorted(by: {$0.currentHoldingsValue < $1.currentHoldingsValue})
+            return coins.sorted(by: { $0.currentHoldingsValue < $1.currentHoldingsValue })
         default:
             return coins
         }
@@ -122,7 +123,7 @@ class HomeViewModel: ObservableObject {
     private func mapAllCoinsToPortfolioCoins(allCoins: [CoinModel], portfolioEntities: [PortfolioEntity]) -> [CoinModel] {
         allCoins
             .compactMap { (coin) -> CoinModel? in
-                guard let entity = portfolioEntities.first(where: {$0.coinID == coin.id}) else {
+                guard let entity = portfolioEntities.first(where: { $0.coinID == coin.id }) else {
                     return nil                            // Returns nil if coin isn't in portfolio
                 }
                 return coin.updateHoldings(amount: entity.amount) // Updates coin with its portfolio holdings
@@ -153,7 +154,10 @@ class HomeViewModel: ObservableObject {
             portfolioCoins
             .map { (coin) -> Double in
                 let currentValue = coin.currentHoldingsValue
-                let percentChange = coin.priceChangePercentage24H ?? 0 / 100
+                let percentChange = (coin.priceChangePercentage24H ?? 0) / 100
+                guard (1 + percentChange) != 0 else {
+                    return currentValue
+                }
                 let previousValue = currentValue / (1 + percentChange)
                 
                 return previousValue                     // Approximate value of each coin 24 hours ago
@@ -161,7 +165,12 @@ class HomeViewModel: ObservableObject {
             .reduce(0, +)
         
         // Calculates 24-hour percentage change in portfolio value
-        let percentageChange = ((portfolioValue - previousValue) / previousValue) * 100
+        let percentageChange: Double
+        if previousValue > 0 {
+            percentageChange = ((portfolioValue - previousValue) / previousValue) * 100
+        } else {
+            percentageChange = 0
+        }
         
         // Creates portfolio statistic
         let portfolio = StatisticModel(
