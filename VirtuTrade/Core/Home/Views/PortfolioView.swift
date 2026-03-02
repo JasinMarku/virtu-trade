@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PortfolioView: View {
     
+    let preselectedCoin: CoinModel? = nil
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
     @State private var quantityText: String = ""
@@ -55,6 +56,12 @@ struct PortfolioView: View {
                 if newValue.isEmpty {
                     removeSelectedCoin()
                 }
+            }
+            .onAppear {
+                applyPreselectedCoinIfNeeded()
+            }
+            .onChange(of: preselectedCoin?.id) { _, _ in
+                applyPreselectedCoinIfNeeded()
             }
         }
         .background(.clear)
@@ -216,6 +223,11 @@ extension PortfolioView {
     private func removeSelectedCoin() {
         selectedCoin = nil
         vm.searchText = ""
+    }
+
+    private func applyPreselectedCoinIfNeeded() {
+        guard let preselectedCoin else { return }
+        updateSelectedCoin(coin: preselectedCoin)
     }
     
 }
