@@ -26,6 +26,7 @@ struct PortfolioView: View {
     
     let preselectedCoin: CoinModel?
     @AppStorage("vt_sim_cash_balance") private var cashBalance: Double = 100_000
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
     @State private var tradeSide: TradeSide = .buy
@@ -169,11 +170,24 @@ struct PortfolioView: View {
 }
 
 extension PortfolioView {
+    private var popularCoinIDs: [String] {
+        ["bitcoin", "ethereum", "solana", "ripple", "chainlink", "dogecoin"]
+    }
+    
+    private var popularCoins: [CoinModel] {
+        popularCoinIDs.compactMap { id in
+            vm.allCoins.first(where: { $0.id == id })
+        }
+    }
+    
+    private var coinSelectionCoins: [CoinModel] {
+        vm.searchText.isEmpty ? popularCoins : vm.allCoins
+    }
     
     private var coinLogoList: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 10) {
-                ForEach(vm.searchText.isEmpty ? vm.portfolioCoins : vm.allCoins) { coin in
+                ForEach(coinSelectionCoins) { coin in
                     CoinLogoView(coin: coin)
                         .padding(.vertical, 6)
                         .frame(width: 75)
@@ -387,10 +401,19 @@ extension PortfolioView {
         
         tradeInputText = ""
         dismissKeyboard()
-        
-        let impact = UIImpactFeedbackGenerator(style: .medium)
+
+        triggerTradeConfirmationHaptic()
+        dismiss()
+    }
+    
+    private func triggerTradeConfirmationHaptic() {
+        let impact = UIImpactFeedbackGenerator(style: .rigid)
         impact.prepare()
         impact.impactOccurred()
+        
+        let notification = UINotificationFeedbackGenerator()
+        notification.prepare()
+        notification.notificationOccurred(.success)
     }
     
     private func toggleInputMode() {
