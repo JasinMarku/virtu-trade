@@ -23,6 +23,7 @@ struct DetailLoadingView: View {
 
 struct DetailView: View {
     
+    @EnvironmentObject private var watchlistStore: WatchlistStore
     @State private var showDescriptionSheet: Bool = false
     @StateObject private var vm: DetailViewModel
     private let columns: [GridItem] = [
@@ -40,30 +41,21 @@ struct DetailView: View {
             Color.theme.background
                 .ignoresSafeArea()
             
-        ScrollView {
+            ScrollView {
                 VStack(spacing: 20) {
                     ChartView(coin: vm.coin)
                         .padding(.vertical)
                     
-                    overviewTitle
-                    
-                    Divider()
-                    
-                    descriptionSection
-                    
-                    overviewGrid
-                    
-                    additionalTitle
-                    
-                    Divider()
-                    
-                    additionalGrid
+                    detailStateContent
                 }
                 .padding()
                 .padding(.top, -15)
             }
         }
         .scrollIndicators(.hidden)
+        .task(id: vm.coin.id) {
+            vm.loadCoinDetails()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 navigationBarTrailingItems
@@ -76,6 +68,7 @@ struct DetailView: View {
     NavigationStack {
         DetailView(coin: DeveloperPreview.instance.coin)
     }
+    .environmentObject(WatchlistStore())
 }
 
 struct ChartView: View {
@@ -203,6 +196,105 @@ struct ChartView: View {
 }
 
 extension DetailView {
+    @ViewBuilder
+    private var detailStateContent: some View {
+        switch vm.viewState {
+        case .loading:
+            loadingStateSection
+        case .failed(let message):
+            failureStateSection(message: message)
+        case .empty:
+            emptyStateSection
+        case .loaded:
+            loadedContentSection
+        }
+    }
+    
+    private var loadedContentSection: some View {
+        VStack(spacing: 20) {
+            overviewTitle
+            
+            Divider()
+            
+            descriptionSection
+            
+            overviewGrid
+            
+            additionalTitle
+            
+            Divider()
+            
+            additionalGrid
+        }
+    }
+    
+    private var loadingStateSection: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .progressViewStyle(.circular)
+            
+            Text("Loading coin details...")
+                .font(.subheadline)
+                .foregroundStyle(Color.theme.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.vertical, 30)
+    }
+    
+    private var emptyStateSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("No detail data available right now.")
+                .font(.headline)
+                .foregroundStyle(Color.primary)
+            
+            Text("Please try again in a moment.")
+                .font(.subheadline)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            Button(action: vm.loadCoinDetails) {
+                Text("Retry")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.primary)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.theme.accentBackground)
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+    }
+    
+    private func failureStateSection(message: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Couldn't load coin details.")
+                .font(.headline)
+                .foregroundStyle(Color.primary)
+            
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            Button(action: vm.loadCoinDetails) {
+                Text("Retry")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.primary)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.theme.accentBackground)
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+    }
+    
     
     private var descriptionSection: some View {
           Group {
@@ -279,8 +371,27 @@ extension DetailView {
         })
     }
     
+    private var isWatchlisted: Bool {
+        watchlistStore.isWatchlisted(vm.coin.id)
+    }
+    
+    private func toggleWatchlist() {
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.prepare()
+        impact.impactOccurred()
+        
+        watchlistStore.toggle(vm.coin.id)
+    }
+    
     private var navigationBarTrailingItems: some View {
         HStack {
+            Button(action: toggleWatchlist) {
+                Image(systemName: isWatchlisted ? "star.fill" : "star")
+                    .font(.headline)
+                    .foregroundStyle(isWatchlisted ? Color.theme.accent : Color.theme.secondaryText)
+            }
+            .accessibilityLabel(isWatchlisted ? "Remove from Watchlist" : "Add to Watchlist")
+            
             Text(vm.coin.symbol.uppercased())
                 .font(.headline)
                 .foregroundStyle(Color.theme.secondaryText)
