@@ -127,7 +127,7 @@ struct ChartView: View {
                     .font(.title)
                     .fontWeight(.bold)
                 
-                    Text(displayPrice.asCurrencyWith2Decimals())
+                    Text(displayPrice.asCurrencyWithAdaptiveDecimals())
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)

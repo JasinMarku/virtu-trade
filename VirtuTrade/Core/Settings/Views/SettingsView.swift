@@ -9,6 +9,10 @@ import SwiftUI
 
 struct SettingsView: View {
     
+    @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
+    @EnvironmentObject private var vm: HomeViewModel
+    @State private var showResetConfirmation: Bool = false
+    
     private let coinGeckoURL = URL(string: "https://www.coingecko.com")
     private let linkedInURL = URL(string: "https://www.linkedin.com/in/jasin-marku/")
     private let githubURL = URL(string: "https://github.com/JasinMarku?tab=repositories")
@@ -30,10 +34,20 @@ struct SettingsView: View {
                         personalTag
                         
                         coingeckoCredit
+                        
+                        resetPortfolioSection
 
                         version
                     }
                 }
+            }
+            .alert("Reset Portfolio?", isPresented: $showResetConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Reset", role: .destructive) {
+                    resetPortfolio()
+                }
+            } message: {
+                Text("This clears all holdings and resets paper cash balance to $100,000.")
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -46,9 +60,38 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environmentObject(DeveloperPreview.instance.homeVM)
 }
 
 extension SettingsView {
+    private var resetPortfolioSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Paper Trading")
+                .font(.callout)
+                .fontWeight(.bold)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            Button(role: .destructive) {
+                showResetConfirmation = true
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.counterclockwise")
+                    Text("Reset Portfolio")
+                        .fontWeight(.semibold)
+                    Spacer()
+                }
+                .padding()
+                .background(Color.theme.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    private func resetPortfolio() {
+        vm.resetPortfolio()
+        simulatedCashBalance = 100_000
+    }
+    
     private var coingeckoCredit: some View {
         VStack(alignment: .leading, spacing: 15) {
             HStack {
