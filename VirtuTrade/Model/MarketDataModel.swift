@@ -174,6 +174,8 @@ struct GlobalData: Codable {
 struct MarketDataModel: Codable {
     let totalMarketCap, totalVolume, marketCapPercentage: [String: Double]
     let marketCapChangePercentage24HUsd: Double
+    let activeCryptocurrencies: Int?
+    let markets: Int?
     
     // Maps JSON keys to Swift property names for decoding.
     enum CodingKeys: String, CodingKey {
@@ -181,6 +183,8 @@ struct MarketDataModel: Codable {
         case totalVolume = "total_volume"
         case marketCapPercentage = "market_cap_percentage"
         case marketCapChangePercentage24HUsd = "market_cap_change_percentage_24h_usd"
+        case activeCryptocurrencies = "active_cryptocurrencies"
+        case markets
     }
     
     // Computed property to retrieve and format total market cap in USD.
@@ -205,5 +209,15 @@ struct MarketDataModel: Codable {
             return item.value.asPercentString()
         }
         return ""
+    }
+    
+    var activeCryptocurrenciesString: String {
+        guard let activeCryptocurrencies else { return "" }
+        return activeCryptocurrencies.formatted()
+    }
+    
+    var marketsString: String {
+        guard let markets else { return "" }
+        return markets.formatted()
     }
 }

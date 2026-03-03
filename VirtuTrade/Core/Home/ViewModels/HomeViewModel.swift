@@ -146,6 +146,12 @@ final class HomeViewModel: ObservableObject {
         let marketCap = StatisticModel(title: "Market Cap", value: data.marketCap, percentageChange: data.marketCapChangePercentage24HUsd)
         let volume = StatisticModel(title: "24h Volume", value: data.volume)
         let btcDominance = StatisticModel(title: "BTC Dominance", value: data.btcDominance)
+        let marketCap24H = StatisticModel(
+            title: "Market Cap 24h",
+            value: data.marketCapChangePercentage24HUsd.asPercentString(),
+            percentageChange: data.marketCapChangePercentage24HUsd
+        )
+        let markets = StatisticModel(title: "Markets", value: data.marketsString)
         
         // Calculates the portfolio's total current value
         let portfolioValue =
@@ -183,7 +189,11 @@ final class HomeViewModel: ObservableObject {
             percentageChange: percentageChange)
         
         // Adds market and portfolio statistics to the stats array
-        stats.append(contentsOf: [marketCap, volume, btcDominance, portfolio])
+        stats.append(contentsOf: [marketCap, volume, btcDominance, marketCap24H])
+        if !data.marketsString.isEmpty {
+            stats.append(markets)
+        }
+        stats.append(portfolio)
         return stats
     }
 }

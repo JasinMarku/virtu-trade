@@ -8,6 +8,13 @@
 import SwiftUI
 
 struct HomeView: View {
+    private enum LiveFilterMode: String, CaseIterable, Identifiable {
+        case topGainers = "Top Gainers"
+        case topVolume = "Top Volume"
+        case topLosers = "Top Losers"
+        
+        var id: String { rawValue }
+    }
     
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
@@ -17,6 +24,7 @@ struct HomeView: View {
     @State private var selectedCoin: CoinModel? = nil
     @State private var showDetailView: Bool = false
     @State private var portfolioEditorCoin: CoinModel? = nil
+    @State private var selectedLiveFilterMode: LiveFilterMode? = nil
     
     var body: some View {
         ZStack {
@@ -31,10 +39,15 @@ struct HomeView: View {
                 
                 SearchBarView(searchText: $vm.searchText)
                     .padding(.top, -15)
+                
+                if !showPortfolio {
+                    liveCategoryButtons
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 if !showPortfolio {
                     allCoinsList
-                    .transition(.move(edge: .leading))
+                        .transition(.move(edge: .leading))
                 }
                 
                 if showPortfolio {
@@ -78,6 +91,39 @@ struct HomeView: View {
 }
 
 extension HomeView {
+    private var displayedLiveCoins: [CoinModel] {
+        switch selectedLiveFilterMode {
+        case .topGainers:
+            return vm.allCoins.sorted { (priceChangePercent(for: $0), $0.rank) > (priceChangePercent(for: $1), $1.rank) }
+        case .topVolume:
+            return vm.allCoins.sorted { (volumeValue(for: $0), $0.rank) > (volumeValue(for: $1), $1.rank) }
+        case .topLosers:
+            return vm.allCoins.sorted { (priceChangePercent(for: $0), $0.rank) < (priceChangePercent(for: $1), $1.rank) }
+        case nil:
+            return vm.allCoins
+        }
+    }
+    
+    private func priceChangePercent(for coin: CoinModel) -> Double {
+        let change = coin.priceChangePercentage24H ?? 0
+        return change.isFinite ? change : 0
+    }
+    
+    private func volumeValue(for coin: CoinModel) -> Double {
+        let volume = coin.totalVolume ?? 0
+        return volume.isFinite ? volume : 0
+    }
+    
+    private func selectLiveFilterMode(_ mode: LiveFilterMode) {
+        let impact = UIImpactFeedbackGenerator(style: .soft)
+        impact.prepare()
+        impact.impactOccurred()
+        
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedLiveFilterMode = selectedLiveFilterMode == mode ? nil : mode
+        }
+    }
+    
     private var portfolioHoldingsValue: Double {
         vm.portfolioCoins.reduce(0) { partialResult, coin in
             let holdings = coin.currentHoldings ?? 0
@@ -117,18 +163,70 @@ extension HomeView {
         .padding(.bottom, 8)
     }
     
-    private var scrollableListHeader: some View {
+    private var liveCategoryButtons: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(LiveFilterMode.allCases) { mode in
+                    Button {
+                        selectLiveFilterMode(mode)
+                    } label: {
+                        Text(mode.rawValue)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.9)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            .frame(minWidth: 150)
+                            .background(
+                                Capsule()
+                                    .fill(selectedLiveFilterMode == mode ? Color.theme.accent : Color.theme.accentBackground)
+                            )
+                            .foregroundStyle(selectedLiveFilterMode == mode ? Color.white : Color.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                if selectedLiveFilterMode != nil {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedLiveFilterMode = nil
+                        }
+                    } label: {
+                        Text("All")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                Capsule()
+                                    .stroke(Color.theme.secondaryText.opacity(0.45), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.theme.secondaryText)
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
+    }
+    
+    private var liveListHeader: some View {
         VStack(spacing: 0) {
-            HomeStatsView(showPortfolio: $showPortfolio)
-                .padding(.bottom, 12)
-            
             balanceHeader
-                .opacity(showPortfolio ? 0 : 1)
-                .frame(height: showPortfolio ? 0 : nil)
-                .clipped()
-                .accessibilityHidden(showPortfolio)
-                .animation(.easeInOut(duration: 0.22), value: showPortfolio)
-            
+            columnTitles
+        }
+    }
+    
+    private var portfolioListHeader: some View {
+        VStack(spacing: 0) {
+            HomeStatsView(
+                totalAccountValue: totalAccountValue,
+                availableCash: simulatedCashBalance,
+                portfolioValue: portfolioHoldingsValue
+            )
+                .padding(.bottom, 12)
             columnTitles
         }
     }
@@ -184,12 +282,12 @@ extension HomeView {
     
     private var allCoinsList: some View {
         List {
-            scrollableListHeader
+            liveListHeader
                 .listRowInsets(.init())
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
             
-            ForEach(vm.allCoins) { coin in
+            ForEach(displayedLiveCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: false)
                 .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
                 .listRowBackground(Color.theme.background)
@@ -213,7 +311,7 @@ extension HomeView {
     
     private var portfolioCoinsList: some View {
         List {
-            scrollableListHeader
+            portfolioListHeader
                 .listRowInsets(.init())
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
