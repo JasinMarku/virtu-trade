@@ -13,6 +13,7 @@ final class HomeViewModel: ObservableObject {
     
     @Published var statistics: [StatisticModel] = []      // Stores key statistics (like market cap, volume) for display
     @Published var allCoins: [CoinModel] = []             // List of all available coins from the API
+    @Published var allCoinsUnfiltered: [CoinModel] = []   // Source coin list before search filtering
     @Published var portfolioCoins: [CoinModel] = []       // List of coins in the user's portfolio
     @Published var isLoading: Bool = false                // Flag for loading state during data fetch
     @Published var searchText: String = ""                // Holds text entered by the user for coin search
@@ -32,6 +33,12 @@ final class HomeViewModel: ObservableObject {
     }
     
     private func addSubscribers() {
+        coinDataService.$allCoins
+            .sink { [weak self] coins in
+                self?.allCoinsUnfiltered = coins
+            }
+            .store(in: &cancellables)
+        
         // Updates allCoins based on search text and API data
         $searchText
             .combineLatest(coinDataService.$allCoins, $sortOption)     // Combines searchText with allCoins from the API

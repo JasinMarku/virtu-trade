@@ -7,9 +7,16 @@
 
 import Foundation
 import Combine
+import os
 
 @MainActor
 final class DetailViewModel: ObservableObject {
+    enum ViewState: Equatable {
+        case loading
+        case loaded
+        case failed(String)
+        case empty
+    }
     
     // Published properties to update UI with coin details and statistics
     @Published var overviewStatistics: [StatisticModel] = [] // Key overview statistics (e.g., price, market cap)
@@ -17,41 +24,72 @@ final class DetailViewModel: ObservableObject {
     @Published var coinDescription: String? = nil // Coin description from API
     @Published var websiteURL: String? = nil // Official website URL
     @Published var redditURL: String? = nil // Subreddit URL
+    @Published var viewState: ViewState = .loading
     
     @Published var coin: CoinModel // Coin model passed to initialize this ViewModel
     private let coinDetailService: CoinDetailDataService // Service to fetch coin details
-    private var cancellables = Set<AnyCancellable>() // Store Combine subscriptions
+    private var detailRequestCancellable: AnyCancellable?
+    
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "me.marku.jasin.VirtuTrade",
+        category: "DetailViewModel"
+    )
     
     // MARK: - Initialization
     init(coin: CoinModel) {
         self.coin = coin
         self.coinDetailService = CoinDetailDataService(coin: coin)
-        self.addSubscribers() // Subscribe to service data updates
     }
     
-    // MARK: - Subscribers
-    private func addSubscribers() {
-        // Listen for updates to coin details and process them
-        coinDetailService.$coinDetails
-            .sink { [weak self] returnedCoinDetails in
+    // MARK: - Loading
+    func loadCoinDetails() {
+        detailRequestCancellable?.cancel()
+        viewState = .loading
+        
+        coinDescription = nil
+        websiteURL = nil
+        redditURL = nil
+        overviewStatistics = []
+        additionalStatistics = []
+        
+        detailRequestCancellable = coinDetailService.getCoinDetails()
+            .receive(on: DispatchQueue.main)
+            .sink(receiveCompletion: { [weak self] completion in
                 guard let self else { return }
-                // Update the UI properties with data from the API
-                self.coinDescription = returnedCoinDetails?.readableDescription
-                self.websiteURL = returnedCoinDetails?.links?.homepage?.first
-                self.redditURL = returnedCoinDetails?.links?.subredditURL
-
-                guard let returnedCoinDetails else {
-                    self.overviewStatistics = []
-                    self.additionalStatistics = []
-                    return
+                
+                if case .failure(let error) = completion {
+                    if error.isCancellation {
+                        self.logger.debug("Ignoring coin detail cancellation for coinID=\(self.coin.id, privacy: .public)")
+                        return
+                    }
+                    self.viewState = .failed(error.userFacingMessage)
                 }
-
+            }, receiveValue: { [weak self] returnedCoinDetails in
+                guard let self else { return }
+                
+                // Update the UI properties with data from the API
+                self.coinDescription = returnedCoinDetails.readableDescription
+                self.websiteURL = returnedCoinDetails.links?.homepage?.first
+                self.redditURL = returnedCoinDetails.links?.subredditURL
+                
                 // Generate and assign statistics based on the fetched details
                 let overviewStats = self.mapDataToStatistics(coinModel: self.coin, coinDetailModel: returnedCoinDetails)
                 self.overviewStatistics = overviewStats.overview
                 self.additionalStatistics = overviewStats.additional
-            }
-            .store(in: &cancellables) // Retain the subscription
+                
+                self.viewState = self.isEffectivelyEmpty(returnedCoinDetails) ? .empty : .loaded
+            })
+    }
+    
+    private func isEffectivelyEmpty(_ detail: CoinDetailModel) -> Bool {
+        let hasDescription = !(detail.readableDescription?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let homepage = detail.links?.homepage?.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let subreddit = detail.links?.subredditURL?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasLinks = !homepage.isEmpty || !subreddit.isEmpty
+        let hasHashing = !(detail.hashingAlgorithm?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let hasBlockTime = detail.blockTimeInMinutes != nil
+        
+        return !(hasDescription || hasLinks || hasHashing || hasBlockTime)
     }
     
     // MARK: - Data Mapping

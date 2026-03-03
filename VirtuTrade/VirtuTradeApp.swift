@@ -16,6 +16,7 @@ struct VirtuTradeApp: App {
     }
     
     @StateObject private var vm = HomeViewModel()
+    @StateObject private var watchlistStore = WatchlistStore()
     @State private var showLaunchView: Bool = true
     
     init() {
@@ -34,6 +35,7 @@ struct VirtuTradeApp: App {
                         .toolbar(.hidden)
                 }
                 .environmentObject(vm)
+                .environmentObject(watchlistStore)
                 
                 ZStack {
                     if showLaunchView {

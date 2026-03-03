@@ -10,6 +10,25 @@ import Combine
 import os
 
 enum NetworkingManager {
+    struct HTTPDataResponse {
+        let data: Data
+        let response: HTTPURLResponse
+        
+        var statusCode: Int { response.statusCode }
+        
+        func bodySnippet(maxLength: Int = 200) -> String {
+            guard maxLength > 0 else { return "" }
+            
+            if let utf8String = String(data: data, encoding: .utf8) {
+                let compact = utf8String.replacingOccurrences(of: "\n", with: " ")
+                    .replacingOccurrences(of: "\r", with: " ")
+                return String(compact.prefix(maxLength))
+            }
+            
+            return data.prefix(maxLength).map { String(format: "%02x", $0) }.joined()
+        }
+    }
+    
     private static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "me.marku.jasin.VirtuTrade",
         category: "Networking"
@@ -44,18 +63,29 @@ enum NetworkingManager {
     
     /// Downloads data from the given URL, retrying up to 3 times on failure.
     static func download(url: URL) -> AnyPublisher<Data, Error> {
+        downloadResponse(url: url)
+            .tryMap { try handleURLResponse(output: $0, url: url) } // Validates the response
+            .eraseToAnyPublisher()
+    }
+    
+    /// Downloads raw HTTP data and response for callers that need status/body inspection.
+    static func downloadResponse(url: URL) -> AnyPublisher<HTTPDataResponse, Error> {
         session.dataTaskPublisher(for: url)
             .mapError { NetworkingError.requestFailed(url: url, underlying: $0) as Error }
-            .tryMap { try handleURLResponse(output: $0, url: url) } // Validates the response
+            .tryMap { output in
+                guard let response = output.response as? HTTPURLResponse else {
+                    throw NetworkingError.badURLResponse(url: url, statusCode: -1)
+                }
+                return HTTPDataResponse(data: output.data, response: response)
+            }
             .retry(2) // Retries in case of transient failures
             .eraseToAnyPublisher()
     }
     
     /// Validates the HTTP response and extracts its data.
-    static func handleURLResponse(output: URLSession.DataTaskPublisher.Output, url: URL) throws -> Data {
-        guard let response = output.response as? HTTPURLResponse,
-              response.statusCode >= 200 && response.statusCode < 300 else {
-            let statusCode = (output.response as? HTTPURLResponse)?.statusCode ?? -1
+    static func handleURLResponse(output: HTTPDataResponse, url: URL) throws -> Data {
+        guard output.statusCode >= 200 && output.statusCode < 300 else {
+            let statusCode = output.statusCode
             throw NetworkingError.badURLResponse(url: url, statusCode: statusCode)
         }
         return output.data

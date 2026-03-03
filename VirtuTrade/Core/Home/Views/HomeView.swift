@@ -18,11 +18,13 @@ struct HomeView: View {
     
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
+    @EnvironmentObject private var watchlistStore: WatchlistStore
     @State private var showPortfolio: Bool = false     // animate right
     @State private var showPortfolioEditor: Bool = false // new sheet for adding
     @State private var showSettingsView: Bool = false
     @State private var selectedCoin: CoinModel? = nil
     @State private var showDetailView: Bool = false
+    @State private var showWatchlistView: Bool = false
     @State private var portfolioEditorCoin: CoinModel? = nil
     @State private var selectedLiveFilterMode: LiveFilterMode? = nil
     
@@ -80,6 +82,9 @@ struct HomeView: View {
                 DetailLoadingView(coin: $selectedCoin)
             }
         }
+        .navigationDestination(isPresented: $showWatchlistView) {
+            WatchlistView()
+        }
     }
 }
 
@@ -88,6 +93,7 @@ struct HomeView: View {
         HomeView()
     }
     .environmentObject(DeveloperPreview.instance.homeVM)
+    .environmentObject(WatchlistStore())
 }
 
 extension HomeView {
@@ -138,24 +144,36 @@ extension HomeView {
     private var totalAccountValue: Double {
         simulatedCashBalance + portfolioHoldingsValue
     }
+    
+    private var watchlistCoins: [CoinModel] {
+        let sourceCoins = vm.allCoinsUnfiltered.isEmpty ? vm.allCoins : vm.allCoinsUnfiltered
+        return watchlistStore.ids.compactMap { id in
+            sourceCoins.first(where: { $0.id == id })
+        }
+    }
+    
+    private var watchlistPreviewCoins: [CoinModel] {
+        Array(watchlistCoins.prefix(3))
+    }
 
     private var balanceHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("My balance")
                 .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundStyle(Color.theme.secondaryText)
             
             Text(totalAccountValue.asCurrencyWith2Decimals())
-                .font(.system(size: 32, weight: .bold))
+                .font(.system(size: 29, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(Color.primary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Available cash: \(simulatedCashBalance.asCurrencyWith2Decimals())")
                 Text("Portfolio value: \(portfolioHoldingsValue.asCurrencyWith2Decimals())")
             }
             .font(.footnote)
+            .fontWeight(.semibold)
             .foregroundStyle(Color.theme.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -215,6 +233,7 @@ extension HomeView {
     private var liveListHeader: some View {
         VStack(spacing: 0) {
             balanceHeader
+            watchlistCard
             columnTitles
         }
     }
@@ -254,7 +273,7 @@ extension HomeView {
             Text(showPortfolio ? "Portfolio" : "Live Prices")
                 .font(.headline)
                 .fontWeight(.heavy)
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(Color.accentColor)
             
             Spacer()
             
@@ -278,6 +297,110 @@ extension HomeView {
     private func segue(coin: CoinModel) {
         selectedCoin = coin
         showDetailView.toggle()
+    }
+    
+    private func openWatchlistView() {
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.prepare()
+        impact.impactOccurred()
+        
+        showWatchlistView = true
+    }
+    
+    private var watchlistCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Watchlist")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Button(action: openWatchlistView) {
+                    Image(systemName: "arrow.right")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .fill(Color.theme.background.opacity(0.8))
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Watchlist")
+            }
+            
+            if watchlistStore.ids.isEmpty {
+                Text("Star coins to add them here.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.secondaryText)
+                
+                Button(action: openWatchlistView) {
+                    Text("Manage")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .fill(Color.theme.background.opacity(0.8))
+                        )
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.primary)
+            } else if watchlistPreviewCoins.isEmpty {
+                Text("Loading watchlist...")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.secondaryText)
+            } else {
+                ForEach(watchlistPreviewCoins) { coin in
+                    Button {
+                        segue(coin: coin)
+                    } label: {
+                        watchlistRow(coin: coin)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.theme.accentBackground)
+        )
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+    }
+    
+    private func watchlistRow(coin: CoinModel) -> some View {
+        let percentChange = coin.priceChangePercentage24H ?? 0
+        let isPositive = percentChange >= 0
+        
+        return HStack(spacing: 12) {
+            CoinImageView(coin: coin)
+                .frame(width: 32, height: 32)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(coin.name)
+                    .font(.headline)
+                    .lineLimit(1)
+                
+                Text(coin.symbol.uppercased())
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(coin.currentPrice.asCurrencyWithAdaptiveDecimals())
+                    .font(.headline)
+                    .lineLimit(1)
+                
+                Text("\(isPositive ? "+" : "")\(percentChange.asNumberString())%")
+                    .font(.caption)
+                    .foregroundStyle(isPositive ? Color.theme.green : Color.theme.red)
+            }
+        }
     }
     
     private var allCoinsList: some View {
