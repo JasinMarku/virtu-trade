@@ -9,6 +9,9 @@ import SwiftUI
 
 struct SettingsView: View {
     
+    @AppStorage("vt_theme_mode") private var themeModeRawValue: String = AppThemeMode.system.rawValue
+    @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
+    @AppStorage("vt_haptics_enabled") private var hapticsEnabled: Bool = true
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
     @State private var showResetConfirmation: Bool = false
@@ -25,22 +28,71 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.theme.background
-                    .ignoresSafeArea()
+            List {
+                Section("Appearance") {
+                    Picker("Theme", selection: Binding<AppThemeMode>(
+                        get: { AppThemeMode(rawValue: themeModeRawValue) ?? .system },
+                        set: { themeModeRawValue = $0.rawValue }
+                    )) {
+                        ForEach(AppThemeMode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
                 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        personalTag
-                        
-                        coingeckoCredit
-                        
-                        resetPortfolioSection
-
-                        version
+                Section("Accessibility") {
+                    Toggle("Reduce Motion", isOn: $reduceMotion)
+                    Toggle("Haptics", isOn: $hapticsEnabled)
+                }
+                
+                Section("Portfolio") {
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Label("Reset Portfolio", systemImage: "arrow.counterclockwise")
                     }
                 }
+                
+                Section("About") {
+                    aboutDeveloperRow
+                    
+                    if let linkedInURL {
+                        Link(destination: linkedInURL) {
+                            aboutLinkRow(title: "LinkedIn", iconName: "linkedin")
+                        }
+                    }
+                    
+                    if let githubURL {
+                        Link(destination: githubURL) {
+                            aboutLinkRow(title: "GitHub", iconName: "github")
+                        }
+                    }
+                    
+                    if let coinGeckoURL {
+                        Link(destination: coinGeckoURL) {
+                            HStack(spacing: 10) {
+                                Image("cglogo")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                Text("Powered by CoinGecko")
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.footnote)
+                                    .foregroundStyle(Color.theme.secondaryText)
+                            }
+                        }
+                    }
+                    
+                    Text(appVersionText)
+                        .font(.footnote)
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.theme.background.ignoresSafeArea())
             .alert("Reset Portfolio?", isPresented: $showResetConfirmation) {
                 Button("Cancel", role: .cancel) { }
                 Button("Reset", role: .destructive) {
@@ -64,138 +116,43 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
-    private var resetPortfolioSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Paper Trading")
-                .font(.callout)
-                .fontWeight(.bold)
-                .foregroundStyle(Color.theme.secondaryText)
-            
-            Button(role: .destructive) {
-                showResetConfirmation = true
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Reset Portfolio")
-                        .fontWeight(.semibold)
-                    Spacer()
-                }
-                .padding()
-                .background(Color.theme.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-            }
-        }
-        .padding(.horizontal)
-    }
-    
     private func resetPortfolio() {
         vm.resetPortfolio()
         simulatedCashBalance = 100_000
     }
     
-    private var coingeckoCredit: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            HStack {
-                Image("cglogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 72)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .shadow(color: Color("Gecko"), radius: 6)
-
-                
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Powered By CoinGecko")
-                        .font(.callout)
-                        .fontWeight(.bold)
-                    
-                    if let coinGeckoURL {
-                        Link(destination: coinGeckoURL, label: {
-                            Text("via CoinGecko.com")
-                                .fontWeight(.medium)
-                        })
-                    }
-                }
-                .foregroundStyle(Color.theme.secondaryText)
-            }
-
-            
-            Text("This app integrates the CoinGecko API, delivering precise and real-time cryptocurrency data. From market trends and historical price charts to in-depth information about various cryptocurrencies, CoinGecko has been instrumental in enabling the seamless functionality of this project. Their reliable and expansive platform provides access to a wealth of data that powers the analytics and insights offered in this app.")
-                .font(.body)
-                .fontWeight(.medium)
-            
-            Spacer()
-        }
-        .padding()
-        .background(.gray.opacity(0.15), in: RoundedRectangle(cornerRadius: 25))
-        .padding(.horizontal)
-    }
-    
-    private var personalTag: some View {
-        HStack(spacing: 15) {
-                Image("logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 72)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .shadow(color: Color.theme.accentTwo, radius: 10)
-                
-                VStack(alignment: .leading) {
-                    Text("Developer")
-                        .font(.callout)
-                        .fontWeight(.bold)
-                    
-                    Text("Jasin Marku")
-                        .fontWeight(.medium)
-                }
-                .foregroundStyle(Color.theme.secondaryText)
-                
-                
-                Spacer()
-                
-                HStack(spacing: 20) {
-                    if let linkedInURL {
-                        Link(destination: linkedInURL, label: {
-                            Image("linkedin")
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 30)
-                        })
-                        .accessibilityLabel("LinkedIn Profile")
-                    }
-                    
-                    if let githubURL {
-                        Link(destination: githubURL, label: {
-                            Image("github")
-                                .renderingMode(.template)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 30)
-                        })
-                        .accessibilityLabel("GitHub Profile")
-                    }
-                }
-                .padding(.trailing, 15)
-            }
-            .padding()
-            .padding(.vertical, 10)
-            .background(.gray.opacity(0.15), in: RoundedRectangle(cornerRadius: 25))
-            .padding(.horizontal)
-    }
-    
-    private var version: some View {
-        HStack {
-            Text(appVersionText)
-                .foregroundStyle(Color.theme.secondaryText)
-                .font(.body)
-                .fontWeight(.medium)
-            
+    private var aboutDeveloperRow: some View {
+        HStack(spacing: 12) {
             Image("logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 20)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Developer")
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+                Text("Jasin Marku")
+                    .font(.subheadline)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private func aboutLinkRow(title: String, iconName: String) -> some View {
+        HStack(spacing: 10) {
+            Image(iconName)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+            Text(title)
+            Spacer()
+            Image(systemName: "arrow.up.right.square")
+                .font(.footnote)
+                .foregroundStyle(Color.theme.secondaryText)
         }
     }
 }

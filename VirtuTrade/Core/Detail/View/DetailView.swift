@@ -76,9 +76,6 @@ struct ChartView: View {
     
     @State private var selectedPrice: Double?
     @State private var selectedIndex: Int?
-    
-    private let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-    
     @State private var previousIndex: Int?
     
     private var priceData: [Double] {
@@ -176,7 +173,7 @@ struct ChartView: View {
 
                                     if index >= 0 && index < priceData.count {
                                         if index != previousIndex {
-                                            impactGenerator.impactOccurred()
+                                            AppHaptics.impact(.light)
                                             previousIndex = index
                                         }
                                         
@@ -376,10 +373,7 @@ extension DetailView {
     }
     
     private func toggleWatchlist() {
-        let impact = UIImpactFeedbackGenerator(style: .light)
-        impact.prepare()
-        impact.impactOccurred()
-        
+        AppHaptics.impact(.light)
         watchlistStore.toggle(vm.coin.id)
     }
     
