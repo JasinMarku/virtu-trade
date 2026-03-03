@@ -60,6 +60,12 @@ final class PortfolioDataService {
         }
     }
     
+    /// Deletes all holdings from persistence.
+    func removeAllPortfolio() {
+        savedEntities.forEach { container.viewContext.delete($0) }
+        applyChanges()
+    }
+    
     // MARK: PRIVATE METHODS
     
     /// Fetches the saved portfolio entities from Core Data.

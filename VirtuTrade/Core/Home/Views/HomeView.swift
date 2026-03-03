@@ -9,9 +9,10 @@ import SwiftUI
 
 struct HomeView: View {
     
+    @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
     @State private var showPortfolio: Bool = false     // animate right
-    @State private var showPortfolioView: Bool = false // new sheet
+    @State private var showPortfolioEditor: Bool = false // new sheet for adding
     @State private var showSettingsView: Bool = false
     @State private var selectedCoin: CoinModel? = nil
     @State private var showDetailView: Bool = false
@@ -28,43 +29,36 @@ struct HomeView: View {
                 
                 homeHeader
                 
-                HomeStatsView(showPortfolio: $showPortfolio)
-                    .padding(.bottom, -5)
-
                 SearchBarView(searchText: $vm.searchText)
-                    .padding(.top, -5)
-                                
-                columnTitles
-                
+                    .padding(.top, -15)
+
                 if !showPortfolio {
                     allCoinsList
                     .transition(.move(edge: .leading))
                 }
                 
                 if showPortfolio {
-                    ZStack(alignment: .top) {
-                        if vm.portfolioCoins.isEmpty && vm.searchText.isEmpty {
-                            EmptyStatePortfolio()
-                                .frame(height: 300)
-                        } else {
-                            portfolioCoinsList
-                                .transition(.move(edge: .trailing))
-                        }
-                    }
+                    portfolioCoinsList
+                        .transition(.move(edge: .trailing))
                 }
-
-                Spacer(minLength: 0)
             }
             .animation(.easeInOut, value: showPortfolio)
-            .sheet(isPresented: $showPortfolioView, onDismiss: {
+            .sheet(item: $portfolioEditorCoin, onDismiss: {
                 portfolioEditorCoin = nil
-            }, content: {
-                PortfolioView()
+            }) { coin in
+                PortfolioView(preselectedCoin: coin)
                     .environmentObject(vm)
-            })
+                    .background(Color.theme.background.ignoresSafeArea())
+            }
+            .sheet(isPresented: $showPortfolioEditor) {
+                PortfolioView(preselectedCoin: nil)
+                    .environmentObject(vm)
+                    .background(Color.theme.background.ignoresSafeArea())
+            }
             .sheet(isPresented: $showSettingsView) {
                 SettingsView()
-                    .presentationDetents([.fraction(4/5)])
+                    .environmentObject(vm)
+                    .presentationDetents([.fraction(0.8)])
                 
             }
         }
@@ -84,6 +78,62 @@ struct HomeView: View {
 }
 
 extension HomeView {
+    private var portfolioHoldingsValue: Double {
+        vm.portfolioCoins.reduce(0) { partialResult, coin in
+            let holdings = coin.currentHoldings ?? 0
+            let price = coin.currentPrice
+            guard holdings.isFinite, price.isFinite, holdings >= 0, price >= 0 else {
+                return partialResult
+            }
+            return partialResult + (holdings * price)
+        }
+    }
+
+    private var totalAccountValue: Double {
+        simulatedCashBalance + portfolioHoldingsValue
+    }
+
+    private var balanceHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("My balance")
+                .font(.subheadline)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            Text(totalAccountValue.asCurrencyWith2Decimals())
+                .font(.system(size: 32, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(Color.primary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Available cash: \(simulatedCashBalance.asCurrencyWith2Decimals())")
+                Text("Portfolio value: \(portfolioHoldingsValue.asCurrencyWith2Decimals())")
+            }
+            .font(.footnote)
+            .foregroundStyle(Color.theme.secondaryText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+        .fontDesign(.rounded)
+    }
+    
+    private var scrollableListHeader: some View {
+        VStack(spacing: 0) {
+            HomeStatsView(showPortfolio: $showPortfolio)
+                .padding(.bottom, 12)
+            
+            balanceHeader
+                .opacity(showPortfolio ? 0 : 1)
+                .frame(height: showPortfolio ? 0 : nil)
+                .clipped()
+                .accessibilityHidden(showPortfolio)
+                .animation(.easeInOut(duration: 0.22), value: showPortfolio)
+            
+            columnTitles
+        }
+    }
+
     private var homeHeader: some View {
         HStack {
             Button(action: {
@@ -92,8 +142,7 @@ extension HomeView {
                 impact.impactOccurred()
                 
                 if showPortfolio {
-                    portfolioEditorCoin = nil
-                    showPortfolioView.toggle()
+                    showPortfolioEditor.toggle()
                 } else {
                     showSettingsView.toggle()
                 }
@@ -136,6 +185,11 @@ extension HomeView {
     
     private var allCoinsList: some View {
         List {
+            scrollableListHeader
+                .listRowInsets(.init())
+                .listRowBackground(Color.theme.background)
+                .listRowSeparator(.hidden)
+            
             ForEach(vm.allCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: false)
                 .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
@@ -160,58 +214,72 @@ extension HomeView {
     
     private var portfolioCoinsList: some View {
         List {
-            ForEach(vm.portfolioCoins) { coin in
-                CoinRowView(coin: coin, showHoldingsColumn: true)
-                    .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
+            scrollableListHeader
+                .listRowInsets(.init())
+                .listRowBackground(Color.theme.background)
+                .listRowSeparator(.hidden)
+            
+            if vm.portfolioCoins.isEmpty && vm.searchText.isEmpty {
+                EmptyStatePortfolio()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(height: 300)
+                    .listRowInsets(.init(top: 30, leading: 0, bottom: 0, trailing: 0))
                     .listRowBackground(Color.theme.background)
                     .listRowSeparator(.hidden)
-                    .onTapGesture {
-                        let impact = UIImpactFeedbackGenerator(style: .soft)
-                        impact.prepare()
-                        impact.impactOccurred()
-                        
-                        segue(coin: coin)
-                    }
-                    .contextMenu {
-                        Button {
-                            editPortfolioHolding(coin)
-                        } label: {
-                            HStack {
-                                Image(systemName: "pencil")
-                                Text("Edit")
-                            }
+            } else {
+                ForEach(vm.portfolioCoins) { coin in
+                    CoinRowView(coin: coin, showHoldingsColumn: true)
+                        .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
+                        .listRowBackground(Color.theme.background)
+                        .listRowSeparator(.hidden)
+                        .onTapGesture {
+                            let impact = UIImpactFeedbackGenerator(style: .soft)
+                            impact.prepare()
+                            impact.impactOccurred()
+                            
+                            segue(coin: coin)
                         }
+                        .contextMenu {
+                            Button {
+                                editPortfolioHolding(coin)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "pencil")
+                                    Text("Edit")
+                                }
+                            }
 
-                        Button(role: .destructive) {
-                            deletePortfolioHolding(coin)
-                        } label: {
-                            HStack {
-                                Image(systemName: "trash")
-                                Text("Delete")
+                            Button(role: .destructive) {
+                                deletePortfolioHolding(coin)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "trash")
+                                    Text("Delete")
+                                }
                             }
                         }
-                    }
-                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                        Button {
-                            editPortfolioHolding(coin)
-                        } label: {
-                            HStack {
-                                Image(systemName: "pencil")
-                                Text("Edit")
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            Button {
+                                editPortfolioHolding(coin)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "pencil")
+                                    Text("Edit")
+                                }
+                            }
+                            .tint(Color.theme.accent)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deletePortfolioHolding(coin)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "trash")
+                                    Text("Delete")
+                                }
                             }
                         }
-                        .tint(Color.theme.accent)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            deletePortfolioHolding(coin)
-                        } label: {
-                            HStack {
-                                Image(systemName: "trash")
-                                Text("Delete")
-                            }
-                        }
-                    }
+                }
             }
         }
         .scrollIndicators(.hidden)
@@ -224,7 +292,6 @@ extension HomeView {
         impact.impactOccurred()
 
         portfolioEditorCoin = coin
-        showPortfolioView = true
     }
 
     private func deletePortfolioHolding(_ coin: CoinModel) {
@@ -290,4 +357,3 @@ extension HomeView {
 
     }
 }
-

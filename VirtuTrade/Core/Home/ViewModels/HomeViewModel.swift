@@ -68,6 +68,10 @@ final class HomeViewModel: ObservableObject {
         portfolioDataService.updatePortfolio(coin: coin, amount: amount)
     }
     
+    func resetPortfolio() {
+        portfolioDataService.removeAllPortfolio()
+    }
+    
     func reloadData() {
         // Triggers data reload from API services
         isLoading = true                                 // Sets loading state to true during fetch

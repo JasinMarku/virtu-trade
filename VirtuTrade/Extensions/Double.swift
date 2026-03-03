@@ -64,6 +64,37 @@ extension Double {
         return currencyFormatter6.string(from: number) ?? "$0.00"
     }
     
+    /// Converts a Double into currency with adaptive precision so tiny prices
+    /// do not collapse to "$0.00".
+    func asCurrencyWithAdaptiveDecimals() -> String {
+        let absoluteValue = abs(self)
+        let maximumFractionDigits: Int
+        
+        switch absoluteValue {
+        case 1...:
+            maximumFractionDigits = 2
+        case 0.01...:
+            maximumFractionDigits = 4
+        case 0.0001...:
+            maximumFractionDigits = 6
+        case 0.000001...:
+            maximumFractionDigits = 8
+        case 0.00000001...:
+            maximumFractionDigits = 10
+        default:
+            maximumFractionDigits = 12
+        }
+        
+        let formatter = NumberFormatter()
+        formatter.usesGroupingSeparator = true
+        formatter.numberStyle = .currency
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = maximumFractionDigits
+        
+        let number = NSNumber(value: self)
+        return formatter.string(from: number) ?? "$0.00"
+    }
+    
     /// Converts a Double into string representation
     /// ```
     /// Convert 1.2345 to "1.23"
