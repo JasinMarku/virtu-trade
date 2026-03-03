@@ -115,7 +115,6 @@ extension HomeView {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.bottom, 8)
-        .fontDesign(.rounded)
     }
     
     private var scrollableListHeader: some View {
