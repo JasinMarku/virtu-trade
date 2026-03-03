@@ -17,6 +17,7 @@ struct HomeView: View {
     }
     
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
+    @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @EnvironmentObject private var vm: HomeViewModel
     @EnvironmentObject private var watchlistStore: WatchlistStore
     @State private var showPortfolio: Bool = false     // animate right
@@ -44,20 +45,20 @@ struct HomeView: View {
                 
                 if !showPortfolio {
                     liveCategoryButtons
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .transition(categoryButtonsTransition)
                 }
 
                 if !showPortfolio {
                     allCoinsList
-                        .transition(.move(edge: .leading))
+                        .transition(liveCoinsTransition)
                 }
                 
                 if showPortfolio {
                     portfolioCoinsList
-                        .transition(.move(edge: .trailing))
+                        .transition(portfolioCoinsTransition)
                 }
             }
-            .animation(.easeInOut, value: showPortfolio)
+            .animation(motionAwareAnimation, value: showPortfolio)
             .sheet(item: $portfolioEditorCoin, onDismiss: {
                 portfolioEditorCoin = nil
             }) { coin in
@@ -97,6 +98,30 @@ struct HomeView: View {
 }
 
 extension HomeView {
+    private var motionAwareAnimation: Animation? {
+        reduceMotion ? nil : .easeInOut
+    }
+    
+    private var categoryButtonsTransition: AnyTransition {
+        reduceMotion ? .identity : .move(edge: .top).combined(with: .opacity)
+    }
+    
+    private var liveCoinsTransition: AnyTransition {
+        reduceMotion ? .identity : .move(edge: .leading)
+    }
+    
+    private var portfolioCoinsTransition: AnyTransition {
+        reduceMotion ? .identity : .move(edge: .trailing)
+    }
+    
+    private func performMotionAwareAnimation(_ animation: Animation = .default, _ action: () -> Void) {
+        if reduceMotion {
+            action()
+        } else {
+            withAnimation(animation, action)
+        }
+    }
+    
     private var displayedLiveCoins: [CoinModel] {
         switch selectedLiveFilterMode {
         case .topGainers:
@@ -121,11 +146,8 @@ extension HomeView {
     }
     
     private func selectLiveFilterMode(_ mode: LiveFilterMode) {
-        let impact = UIImpactFeedbackGenerator(style: .soft)
-        impact.prepare()
-        impact.impactOccurred()
-        
-        withAnimation(.easeInOut(duration: 0.22)) {
+        AppHaptics.impact(.soft)
+        performMotionAwareAnimation(.easeInOut(duration: 0.22)) {
             selectedLiveFilterMode = selectedLiveFilterMode == mode ? nil : mode
         }
     }
@@ -168,13 +190,6 @@ extension HomeView {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(Color.primary)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Portfolio value: \(portfolioHoldingsValue.asCurrencyWith2Decimals())")
-            }
-            .font(.footnote)
-            .fontWeight(.semibold)
-            .foregroundStyle(Color.theme.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
@@ -207,7 +222,7 @@ extension HomeView {
                 
                 if selectedLiveFilterMode != nil {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        performMotionAwareAnimation(.easeInOut(duration: 0.2)) {
                             selectedLiveFilterMode = nil
                         }
                     } label: {
@@ -253,9 +268,7 @@ extension HomeView {
     private var homeHeader: some View {
         HStack {
             Button(action: {
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.prepare()
-                impact.impactOccurred()
+                AppHaptics.impact(.light)
                 
                 if showPortfolio {
                     showPortfolioEditor.toggle()
@@ -273,20 +286,18 @@ extension HomeView {
             Text(showPortfolio ? "Portfolio" : "Live Prices")
                 .font(.headline)
                 .fontWeight(.heavy)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.primary)
             
             Spacer()
             
             Button(action: {
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.prepare()
-                impact.impactOccurred()
+                AppHaptics.impact(.light)
                 
                 showPortfolio.toggle()
             }, label: {
                 CircleButtonView(iconName: "chevron.right")
                     .rotationEffect(Angle(degrees: showPortfolio ? 180 : 0))
-                    .animation(.easeInOut, value: showPortfolio)
+                    .animation(motionAwareAnimation, value: showPortfolio)
             })
             .accessibilityLabel(showPortfolio ? "Show Live Prices" : "Show Portfolio")
         }
@@ -300,9 +311,7 @@ extension HomeView {
     }
     
     private func openWatchlistView() {
-        let impact = UIImpactFeedbackGenerator(style: .light)
-        impact.prepare()
-        impact.impactOccurred()
+        AppHaptics.impact(.light)
         
         showWatchlistView = true
     }
@@ -333,6 +342,7 @@ extension HomeView {
             if watchlistStore.ids.isEmpty {
                 Text("Star coins to add them here.")
                     .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundStyle(Color.theme.secondaryText)
                 
                 Button(action: openWatchlistView) {
@@ -416,10 +426,7 @@ extension HomeView {
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
                 .onTapGesture {
-                    let impact = UIImpactFeedbackGenerator(style: .soft)
-                    impact.prepare()
-                    impact.impactOccurred()
-                    
+                    AppHaptics.impact(.soft)
                     segue(coin: coin)
                 }
             }
@@ -453,10 +460,7 @@ extension HomeView {
                         .listRowBackground(Color.theme.background)
                         .listRowSeparator(.hidden)
                         .onTapGesture {
-                            let impact = UIImpactFeedbackGenerator(style: .soft)
-                            impact.prepare()
-                            impact.impactOccurred()
-                            
+                            AppHaptics.impact(.soft)
                             segue(coin: coin)
                         }
                         .contextMenu {
@@ -507,17 +511,13 @@ extension HomeView {
     }
 
     private func editPortfolioHolding(_ coin: CoinModel) {
-        let impact = UIImpactFeedbackGenerator(style: .light)
-        impact.prepare()
-        impact.impactOccurred()
+        AppHaptics.impact(.light)
 
         portfolioEditorCoin = coin
     }
 
     private func deletePortfolioHolding(_ coin: CoinModel) {
-        let impact = UIImpactFeedbackGenerator(style: .light)
-        impact.prepare()
-        impact.impactOccurred()
+        AppHaptics.impact(.light)
 
         vm.updatePortfolio(coin: coin, amount: 0)
     }
@@ -531,11 +531,8 @@ extension HomeView {
                     .rotationEffect(Angle(degrees: vm.sortOption == .rank ? 0 : 180))
             }
             .onTapGesture {
-                let impact = UIImpactFeedbackGenerator(style: .soft)
-                 impact.prepare()
-                 impact.impactOccurred()
-                
-                withAnimation(.default) {
+                AppHaptics.impact(.soft)
+                performMotionAwareAnimation(.default) {
                     vm.sortOption = vm.sortOption == .rank ? .rankReversed : .rank
                 }
             }
@@ -550,7 +547,7 @@ extension HomeView {
                         .rotationEffect(Angle(degrees: vm.sortOption == .holdings ? 0 : 180))
                 }
                 .onTapGesture {
-                    withAnimation(.default) {
+                    performMotionAwareAnimation(.default) {
                         vm.sortOption = vm.sortOption == .holdings ? .holdingsReversed : .holdings
                     }
                 }
@@ -564,7 +561,7 @@ extension HomeView {
             }
             .frame(width: UIScreen.main.bounds.width / 3.5, alignment: .trailing)
             .onTapGesture {
-                withAnimation(.default) {
+                performMotionAwareAnimation(.default) {
                     vm.sortOption = vm.sortOption == .price ? .priceReversed : .price
                 }
             }

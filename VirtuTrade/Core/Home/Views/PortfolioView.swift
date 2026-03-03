@@ -26,6 +26,7 @@ struct PortfolioView: View {
     
     let preselectedCoin: CoinModel?
     @AppStorage("vt_sim_cash_balance") private var cashBalance: Double = 100_000
+    @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
@@ -192,8 +193,12 @@ extension PortfolioView {
                         .padding(.vertical, 6)
                         .frame(width: 75)
                         .onTapGesture {
-                            withAnimation(.easeIn) {
+                            if reduceMotion {
                                 updateSelectedCoin(coin: coin)
+                            } else {
+                                withAnimation(.easeIn) {
+                                    updateSelectedCoin(coin: coin)
+                                }
                             }
                         }
                         .background(
@@ -256,8 +261,8 @@ extension PortfolioView {
                 .stroke(Color.theme.accent.opacity(0.2), lineWidth: 1)
         )
         .padding()
-        .animation(.easeInOut, value: tradeInputText)
-        .animation(.easeInOut, value: tradeSide)
+        .animation(reduceMotion ? nil : .easeInOut, value: tradeInputText)
+        .animation(reduceMotion ? nil : .easeInOut, value: tradeSide)
     }
     
     private var coinHeader: some View {
@@ -407,13 +412,8 @@ extension PortfolioView {
     }
     
     private func triggerTradeConfirmationHaptic() {
-        let impact = UIImpactFeedbackGenerator(style: .rigid)
-        impact.prepare()
-        impact.impactOccurred()
-        
-        let notification = UINotificationFeedbackGenerator()
-        notification.prepare()
-        notification.notificationOccurred(.success)
+        AppHaptics.impact(.rigid)
+        AppHaptics.notification(.success)
     }
     
     private func toggleInputMode() {

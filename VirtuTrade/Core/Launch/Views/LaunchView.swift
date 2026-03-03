@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LaunchView: View {
     
+    @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @State private var loadingText: [String] = "Analyzing The Market…".map { String ($0) }
     @State private var showingLoadingText: Bool = false
     private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -39,7 +40,7 @@ struct LaunchView: View {
                                 .offset(y: counter == index ? -4 : 0)
                         }
                     }
-                    .transition(AnyTransition.scale.animation(.easeIn))
+                    .transition(reduceMotion ? .identity : AnyTransition.scale.animation(.easeIn))
 
                 }
             }
@@ -50,19 +51,28 @@ struct LaunchView: View {
         }
         .onReceive(timer, perform: { _ in
             guard showLaunchView else { return }
-            withAnimation(.spring()) {
-                let lastIndex = loadingText.count - 1
-                if counter == lastIndex {
-                    counter = 0
-                    loops += 1
-                    if loops >= 2 {
-                        showLaunchView = false
-                    }
-                } else {
-                    counter += 1
+            
+            if reduceMotion {
+                advanceLoadingState()
+            } else {
+                withAnimation(.spring()) {
+                    advanceLoadingState()
                 }
             }
         })
+    }
+    
+    private func advanceLoadingState() {
+        let lastIndex = loadingText.count - 1
+        if counter == lastIndex {
+            counter = 0
+            loops += 1
+            if loops >= 2 {
+                showLaunchView = false
+            }
+        } else {
+            counter += 1
+        }
     }
 }
 

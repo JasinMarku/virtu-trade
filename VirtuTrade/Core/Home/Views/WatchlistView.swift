@@ -44,19 +44,13 @@ struct WatchlistView: View {
                         .listRowBackground(Color.theme.background)
                         .listRowSeparator(.hidden)
                         .onTapGesture {
-                            let impact = UIImpactFeedbackGenerator(style: .soft)
-                            impact.prepare()
-                            impact.impactOccurred()
-                            
+                            AppHaptics.impact(.soft)
                             selectedCoin = coin
                             showDetailView = true
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
-                                let impact = UIImpactFeedbackGenerator(style: .light)
-                                impact.prepare()
-                                impact.impactOccurred()
-                                
+                                AppHaptics.impact(.light)
                                 watchlistStore.remove(coin.id)
                             } label: {
                                 Label("Remove", systemImage: "star.slash")
