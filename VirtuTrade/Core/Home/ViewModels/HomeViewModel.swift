@@ -10,6 +10,47 @@ import Combine
 
 @MainActor
 final class HomeViewModel: ObservableObject {
+    struct TradeExecutionResult {
+        let updatedCashBalance: Double
+        let updatedHoldings: Double
+        let totalValue: Double
+        let executionPrice: Double
+    }
+    
+    enum TradeExecutionError: LocalizedError {
+        case invalidQuantity
+        case invalidPrice
+        case insufficientCash
+        case noHoldings
+        case insufficientHoldings
+        
+        var userMessage: String {
+            switch self {
+            case .invalidQuantity:
+                return "Enter a valid quantity."
+            case .invalidPrice:
+                return "Price is unavailable right now."
+            case .insufficientCash:
+                return "Insufficient cash for this buy."
+            case .noHoldings:
+                return "No holdings available to sell."
+            case .insufficientHoldings:
+                return "Insufficient holdings for this sell."
+            }
+        }
+        
+        var errorDescription: String? {
+            userMessage
+        }
+    }
+    
+    private enum SimulationDefaults {
+        static let cashBalanceKey = "vt_sim_cash_balance"
+        static let startingCashBalance: Double = 100_000
+    }
+    
+    private let holdingEpsilon: Double = 0.00000001
+    private let tradeComparisonEpsilon: Double = 0.000000001
     
     @Published var statistics: [StatisticModel] = []      // Stores key statistics (like market cap, volume) for display
     @Published var allCoins: [CoinModel] = []             // List of all available coins from the API
@@ -73,6 +114,67 @@ final class HomeViewModel: ObservableObject {
     func updatePortfolio(coin: CoinModel, amount: Double) {
         // Updates portfolio with the new coin amount, then saves the data
         portfolioDataService.updatePortfolio(coin: coin, amount: amount)
+    }
+    
+    func tradeValidationMessage(coin: CoinModel, type: TradeType, quantity: Double) -> String? {
+        validationError(coin: coin, type: type, quantity: quantity)?.userMessage
+    }
+    
+    func availableHoldings(for coinID: String) -> Double {
+        currentHoldings(for: coinID)
+    }
+    
+    @discardableResult
+    func executeTrade(
+        coin: CoinModel,
+        type: TradeType,
+        quantity: Double,
+        tradeHistoryStore: TradeHistoryStore
+    ) -> Result<TradeExecutionResult, TradeExecutionError> {
+        if let validationError = validationError(coin: coin, type: type, quantity: quantity) {
+            return .failure(validationError)
+        }
+        
+        let executionPrice = coin.currentPrice
+        let totalValue = quantity * executionPrice
+        
+        let updatedHoldings: Double
+        let updatedCashBalance: Double
+        
+        switch type {
+        case .buy:
+            updatedHoldings = availableHoldings(for: coin.id) + quantity
+            updatedCashBalance = max(cashBalance - totalValue, 0)
+        case .sell:
+            updatedHoldings = max(availableHoldings(for: coin.id) - quantity, 0)
+            updatedCashBalance = cashBalance + totalValue
+        }
+        
+        let normalizedHoldings = abs(updatedHoldings) < holdingEpsilon ? 0 : updatedHoldings
+        cashBalance = updatedCashBalance
+        updatePortfolio(coin: coin, amount: normalizedHoldings)
+        
+        let trade = TradeModel(
+            id: UUID(),
+            coinID: coin.id,
+            symbol: coin.symbol.uppercased(),
+            name: coin.name,
+            type: type,
+            quantity: quantity,
+            priceAtExecution: executionPrice,
+            totalValue: totalValue,
+            timestamp: Date()
+        )
+        tradeHistoryStore.addTrade(trade: trade)
+        
+        return .success(
+            TradeExecutionResult(
+                updatedCashBalance: updatedCashBalance,
+                updatedHoldings: normalizedHoldings,
+                totalValue: totalValue,
+                executionPrice: executionPrice
+            )
+        )
     }
     
     func resetPortfolio() {
@@ -202,5 +304,57 @@ final class HomeViewModel: ObservableObject {
         }
         stats.append(portfolio)
         return stats
+    }
+    
+    private var cashBalance: Double {
+        get {
+            let defaults = UserDefaults.standard
+            if defaults.object(forKey: SimulationDefaults.cashBalanceKey) == nil {
+                return SimulationDefaults.startingCashBalance
+            }
+            return defaults.double(forKey: SimulationDefaults.cashBalanceKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: SimulationDefaults.cashBalanceKey)
+        }
+    }
+    
+    private func currentHoldings(for coinID: String) -> Double {
+        let holdings = portfolioCoins.first(where: { $0.id == coinID })?.currentHoldings ?? 0
+        guard holdings.isFinite, holdings >= 0 else { return 0 }
+        return holdings
+    }
+    
+    private func validationError(coin: CoinModel, type: TradeType, quantity: Double) -> TradeExecutionError? {
+        guard quantity.isFinite, quantity > 0 else {
+            return .invalidQuantity
+        }
+        
+        let executionPrice = coin.currentPrice
+        guard executionPrice.isFinite, executionPrice > 0 else {
+            return .invalidPrice
+        }
+        
+        let totalValue = quantity * executionPrice
+        guard totalValue.isFinite, totalValue > 0 else {
+            return .invalidQuantity
+        }
+        
+        switch type {
+        case .buy:
+            guard cashBalance + tradeComparisonEpsilon >= totalValue else {
+                return .insufficientCash
+            }
+        case .sell:
+            let holdings = availableHoldings(for: coin.id)
+            guard holdings > tradeComparisonEpsilon else {
+                return .noHoldings
+            }
+            guard (quantity - holdings) <= tradeComparisonEpsilon else {
+                return .insufficientHoldings
+            }
+        }
+        
+        return nil
     }
 }

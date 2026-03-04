@@ -81,4 +81,5 @@ struct WatchlistView: View {
     }
     .environmentObject(DeveloperPreview.instance.homeVM)
     .environmentObject(WatchlistStore())
+    .environmentObject(TradeHistoryStore())
 }

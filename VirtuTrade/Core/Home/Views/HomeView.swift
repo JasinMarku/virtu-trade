@@ -20,12 +20,14 @@ struct HomeView: View {
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @EnvironmentObject private var vm: HomeViewModel
     @EnvironmentObject private var watchlistStore: WatchlistStore
+    @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
     @State private var showPortfolio: Bool = false     // animate right
     @State private var showPortfolioEditor: Bool = false // new sheet for adding
     @State private var showSettingsView: Bool = false
     @State private var selectedCoin: CoinModel? = nil
     @State private var showDetailView: Bool = false
     @State private var showWatchlistView: Bool = false
+    @State private var showTradeHistoryView: Bool = false
     @State private var portfolioEditorCoin: CoinModel? = nil
     @State private var selectedLiveFilterMode: LiveFilterMode? = nil
     
@@ -64,16 +66,19 @@ struct HomeView: View {
             }) { coin in
                 PortfolioView(preselectedCoin: coin)
                     .environmentObject(vm)
+                    .environmentObject(tradeHistoryStore)
                     .background(Color.theme.background.ignoresSafeArea())
             }
             .sheet(isPresented: $showPortfolioEditor) {
                 PortfolioView(preselectedCoin: nil)
                     .environmentObject(vm)
+                    .environmentObject(tradeHistoryStore)
                     .background(Color.theme.background.ignoresSafeArea())
             }
             .sheet(isPresented: $showSettingsView) {
                 SettingsView()
                     .environmentObject(vm)
+                    .environmentObject(tradeHistoryStore)
                     .presentationDetents([.fraction(0.8)])
                 
             }
@@ -86,6 +91,9 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showWatchlistView) {
             WatchlistView()
         }
+        .navigationDestination(isPresented: $showTradeHistoryView) {
+            TradeHistoryView()
+        }
     }
 }
 
@@ -95,6 +103,7 @@ struct HomeView: View {
     }
     .environmentObject(DeveloperPreview.instance.homeVM)
     .environmentObject(WatchlistStore())
+    .environmentObject(TradeHistoryStore())
 }
 
 extension HomeView {
@@ -261,6 +270,30 @@ extension HomeView {
                 portfolioValue: portfolioHoldingsValue
             )
                 .padding(.bottom, 12)
+            
+            HStack {
+                Text("Activity")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.theme.secondaryText)
+                
+                Spacer()
+                
+                Button(action: openTradeHistoryView) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock")
+                        Text("Trade History")
+                            .fontWeight(.semibold)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.accent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open Trade History")
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            
             columnTitles
         }
     }
@@ -314,6 +347,11 @@ extension HomeView {
         AppHaptics.impact(.light)
         
         showWatchlistView = true
+    }
+    
+    private func openTradeHistoryView() {
+        AppHaptics.impact(.light)
+        showTradeHistoryView = true
     }
     
     private var watchlistCard: some View {
@@ -572,5 +610,106 @@ extension HomeView {
         .padding(.horizontal)
         .padding(.top, 10)
 
+    }
+}
+
+struct TradeHistoryView: View {
+    @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
+    
+    private var trades: [TradeModel] {
+        tradeHistoryStore.getTrades()
+    }
+    
+    var body: some View {
+        List {
+            if trades.isEmpty {
+                Text("No trades yet. Buy or sell a coin from the detail screen to see activity.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.secondaryText)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .listRowBackground(Color.theme.background)
+                    .listRowSeparator(.hidden)
+                    .padding(.vertical, 30)
+            } else {
+                ForEach(trades) { trade in
+                    TradeHistoryRow(trade: trade)
+                        .listRowInsets(.init(top: 12, leading: 0, bottom: 12, trailing: 10))
+                        .listRowBackground(Color.theme.background)
+                        .listRowSeparator(.hidden)
+                }
+            }
+        }
+        .padding()
+        .listStyle(.plain)
+        .scrollIndicators(.hidden)
+        .background(Color.theme.background)
+        .navigationTitle("Trade History")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct TradeHistoryRow: View {
+    let trade: TradeModel
+    
+    private var tradeTypeText: String {
+        trade.type.rawValue.uppercased()
+    }
+    
+    private var tradeTypeColor: Color {
+        trade.type == .buy ? Color.theme.green : Color.theme.red
+    }
+    
+    private var timestampText: String {
+        trade.timestamp.formatted(date: .abbreviated, time: .shortened)
+    }
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 8) {
+                    Text(tradeTypeText)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(tradeTypeColor)
+                    
+                    Text(trade.symbol.uppercased())
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.primary)
+                }
+                
+                Text(trade.name)
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+                
+                Text(timestampText)
+                    .font(.caption2)
+                    .foregroundStyle(Color.theme.secondaryText)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 5) {
+                Text("\(formattedQuantity(trade.quantity)) \(trade.symbol.uppercased())")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.primary)
+                
+                Text("@ \(trade.priceAtExecution.asCurrencyWithAdaptiveDecimals())")
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+                
+                Text(trade.totalValue.asCurrencyWithAdaptiveDecimals())
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+            }
+        }
+    }
+    
+    private func formattedQuantity(_ value: Double) -> String {
+        let fixed = String(format: "%.6f", value)
+        return fixed
+            .replacingOccurrences(of: #"([0-9])0+$"#, with: "$1", options: .regularExpression)
+            .replacingOccurrences(of: #"\.$"#, with: "", options: .regularExpression)
     }
 }

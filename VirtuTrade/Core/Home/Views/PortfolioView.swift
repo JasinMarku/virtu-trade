@@ -22,13 +22,12 @@ struct PortfolioView: View {
         case coin
     }
     
-    private let holdingEpsilon = 0.00000001
-    
     let preselectedCoin: CoinModel?
     @AppStorage("vt_sim_cash_balance") private var cashBalance: Double = 100_000
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vm: HomeViewModel
+    @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
     @State private var selectedCoin: CoinModel? = nil
     @State private var tradeSide: TradeSide = .buy
     @State private var inputMode: InputMode = .usd
@@ -46,16 +45,31 @@ struct PortfolioView: View {
         return Double(trimmed)
     }
     
+    private var activeCoin: CoinModel? {
+        guard let selectedCoin else { return nil }
+        return vm.allCoinsUnfiltered.first(where: { $0.id == selectedCoin.id })
+        ?? vm.allCoins.first(where: { $0.id == selectedCoin.id })
+        ?? vm.portfolioCoins.first(where: { $0.id == selectedCoin.id })
+        ?? selectedCoin
+    }
+    
     private var selectedCoinSymbol: String {
-        selectedCoin?.symbol.uppercased() ?? "COIN"
+        activeCoin?.symbol.uppercased() ?? "COIN"
     }
     
     private var currentPrice: Double {
-        selectedCoin?.currentPrice ?? 0
+        activeCoin?.currentPrice ?? 0
     }
     
     private var currentHoldings: Double {
-        selectedCoin?.currentHoldings ?? 0
+        guard let coinID = activeCoin?.id ?? selectedCoin?.id else { return 0 }
+        let holdings = vm.portfolioCoins.first(where: { $0.id == coinID })?.currentHoldings ?? activeCoin?.currentHoldings ?? 0
+        guard holdings.isFinite, holdings >= 0 else { return 0 }
+        return holdings
+    }
+    
+    private var tradeType: TradeType {
+        tradeSide == .buy ? .buy : .sell
     }
     
     private var tradeCoinAmount: Double {
@@ -93,33 +107,24 @@ struct PortfolioView: View {
             return "Select a coin to trade."
         }
         
-        guard let input = parsedInput, input > 0 else {
+        guard let parsedInput, parsedInput > 0 else {
             return "Enter a valid trade amount."
+        }
+        
+        guard let coin = activeCoin else {
+            return "Select a coin to trade."
         }
         
         guard currentPrice > 0 else {
             return "Price is unavailable. Try again in a moment."
         }
         
-        guard tradeCoinAmount > 0, tradeUSDValue > 0 else {
+        let quantity = tradeCoinAmount
+        guard quantity > 0, tradeUSDValue > 0 else {
             return "Trade amount must be greater than zero."
         }
         
-        switch tradeSide {
-        case .buy:
-            guard tradeUSDValue <= cashBalance + holdingEpsilon else {
-                return "Insufficient cash balance for this buy."
-            }
-        case .sell:
-            guard currentHoldings > holdingEpsilon else {
-                return "You do not have holdings to sell."
-            }
-            guard tradeCoinAmount <= currentHoldings + holdingEpsilon else {
-                return "Insufficient holdings for this sell."
-            }
-        }
-        
-        return nil
+        return vm.tradeValidationMessage(coin: coin, type: tradeType, quantity: quantity)
     }
     
     private var isTradeValid: Bool {
@@ -168,6 +173,7 @@ struct PortfolioView: View {
 #Preview {
     PortfolioView()
         .environmentObject(DeveloperPreview.instance.homeVM)
+        .environmentObject(TradeHistoryStore())
 }
 
 extension PortfolioView {
@@ -267,7 +273,7 @@ extension PortfolioView {
     
     private var coinHeader: some View {
         HStack {
-            AsyncImage(url: URL(string: selectedCoin?.image ?? "")) { image in
+            AsyncImage(url: URL(string: activeCoin?.image ?? "")) { image in
                 image.resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 40, height: 40)
@@ -277,7 +283,7 @@ extension PortfolioView {
             .frame(width: 40, height: 40)
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(selectedCoin?.name ?? "")
+                Text(activeCoin?.name ?? "")
                     .font(.headline)
                 Text(selectedCoinSymbol)
                     .font(.subheadline)
@@ -379,7 +385,7 @@ extension PortfolioView {
     }
     
     private func confirmTrade() {
-        guard let coin = selectedCoin else { return }
+        guard let coin = activeCoin else { return }
         
         guard isTradeValid else {
             tradeAlertMessage = validationMessage ?? "Unable to complete this trade."
@@ -387,22 +393,23 @@ extension PortfolioView {
             return
         }
         
-        let coinAmount = tradeCoinAmount
-        let usdValue = tradeUSDValue
+        let quantity = tradeCoinAmount
+        let executionResult = vm.executeTrade(
+            coin: coin,
+            type: tradeType,
+            quantity: quantity,
+            tradeHistoryStore: tradeHistoryStore
+        )
         
-        let updatedHoldings: Double
-        switch tradeSide {
-        case .buy:
-            updatedHoldings = currentHoldings + coinAmount
-            cashBalance = max(cashBalance - usdValue, 0)
-        case .sell:
-            updatedHoldings = max(currentHoldings - coinAmount, 0)
-            cashBalance += usdValue
+        switch executionResult {
+        case .success(let result):
+            selectedCoin = coin.updateHoldings(amount: result.updatedHoldings)
+        case .failure(let error):
+            tradeAlertMessage = error.userMessage
+            showTradeAlert = true
+            AppHaptics.notification(.error)
+            return
         }
-        
-        let normalizedHoldings = updatedHoldings <= holdingEpsilon ? 0 : updatedHoldings
-        vm.updatePortfolio(coin: coin, amount: normalizedHoldings)
-        selectedCoin = coin.updateHoldings(amount: normalizedHoldings)
         
         tradeInputText = ""
         dismissKeyboard()

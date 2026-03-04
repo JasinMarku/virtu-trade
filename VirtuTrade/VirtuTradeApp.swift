@@ -74,6 +74,7 @@ struct VirtuTradeApp: App {
     
     @StateObject private var vm = HomeViewModel()
     @StateObject private var watchlistStore = WatchlistStore()
+    @StateObject private var tradeHistoryStore = TradeHistoryStore()
     @State private var showLaunchView: Bool = true
     @AppStorage("vt_theme_mode") private var themeModeRawValue: String = AppThemeMode.system.rawValue
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
@@ -95,6 +96,7 @@ struct VirtuTradeApp: App {
                 }
                 .environmentObject(vm)
                 .environmentObject(watchlistStore)
+                .environmentObject(tradeHistoryStore)
                 
                 ZStack {
                     if showLaunchView {
