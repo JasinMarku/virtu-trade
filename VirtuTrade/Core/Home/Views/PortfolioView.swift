@@ -8,30 +8,196 @@
 import UIKit
 import SwiftUI
 
+enum TradeInputMode: String, CaseIterable, Identifiable {
+    case usd = "USD"
+    case coin = "COIN"
+    
+    var id: String { rawValue }
+}
+
+struct TradeOverlayPanelContent: View {
+    let tradeSide: TradeType
+    let coinName: String
+    let coinSymbol: String
+    @Binding var inputText: String
+    let inputMode: TradeInputMode
+    let availableHoldingsText: String?
+    let canSellAll: Bool
+    let estimatedValueText: String
+    let currentPriceText: String
+    let errorText: String?
+    let isConfirmEnabled: Bool
+    let onClose: () -> Void
+    let onConfirm: () -> Void
+    let onSellAll: () -> Void
+    let onToggleInputMode: () -> Void
+    
+    private var tradeColor: Color {
+        tradeSide == .buy ? Color.theme.green : Color.theme.red
+    }
+    
+    private var titleText: String {
+        "\(tradeSide == .buy ? "Buy" : "Sell") \(coinSymbol.uppercased())"
+    }
+    
+    private var inputLabelText: String {
+        tradeSide == .buy && inputMode == .usd ? "Amount" : "Quantity"
+    }
+    
+    private var inputUnitText: String {
+        tradeSide == .buy && inputMode == .usd ? "USD" : coinSymbol.uppercased()
+    }
+    
+    private var inputPlaceholderText: String {
+        tradeSide == .buy && inputMode == .usd ? "0.00" : "0.0000000"
+    }
+    
+    private var inputModeButtonTitle: String {
+        inputMode == .usd ? "Use COIN" : "Use USD"
+    }
+    
+    private var estimateLabelText: String {
+        tradeSide == .buy ? "Estimated cost" : "Estimated proceeds"
+    }
+    
+    private var confirmButtonTitle: String {
+        tradeSide == .buy ? "Buy" : "Sell"
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(titleText)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Color.primary)
+                    Text(coinName)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
+                .padding(.vertical, 10)
+                
+                Spacer()
+                
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.theme.secondaryText)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(inputLabelText)
+                        .font(.caption)
+                        .foregroundStyle(Color.theme.secondaryText)
+                    
+                    Spacer()
+                    
+                    if tradeSide == .sell {
+                        Button(action: onSellAll) {
+                            Text("Sell All")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.theme.red)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canSellAll)
+                        .opacity(canSellAll ? 1 : 0.45)
+                    } else {
+                        Button(action: onToggleInputMode) {
+                            Text(inputModeButtonTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.theme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                
+                if let availableHoldingsText, tradeSide == .sell {
+                    Text("Available: \(availableHoldingsText) \(coinSymbol.uppercased())")
+                        .font(.caption)
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
+                
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    TextField(inputPlaceholderText, text: $inputText)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 34, weight: .bold))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                    
+                    Text(inputUnitText)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
+                
+                Rectangle()
+                    .fill(Color.theme.secondaryText.opacity(0.35))
+                    .frame(height: 1)
+            }
+            
+            VStack(spacing: 8) {
+                HStack {
+                    Text(estimateLabelText)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.theme.secondaryText)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Text(estimatedValueText)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Color.primary)
+                }
+                
+                HStack {
+                    Text("Price")
+                        .font(.caption)
+                        .foregroundStyle(Color.theme.secondaryText)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Text(currentPriceText)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
+            }
+            
+            if let errorText {
+                Text(errorText)
+                    .font(.footnote)
+                    .foregroundStyle(Color.theme.red)
+            }
+            
+            Button(action: onConfirm) {
+                Text(confirmButtonTitle)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(
+                        tradeColor,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    )
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .disabled(!isConfirmEnabled)
+            .opacity(isConfirmEnabled ? 1 : 0.45)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 28)
+    }
+}
+
 struct PortfolioView: View {
-    
-    enum TradeSide: String, CaseIterable, Identifiable {
-        case buy = "Buy"
-        case sell = "Sell"
-        
-        var id: String { rawValue }
-    }
-    
-    enum InputMode {
-        case usd
-        case coin
-    }
-    
     let preselectedCoin: CoinModel?
     let showsDismissButton: Bool
-    @AppStorage("vt_sim_cash_balance") private var cashBalance: Double = 100_000
-    @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var vm: HomeViewModel
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
-    @State private var selectedCoin: CoinModel? = nil
-    @State private var tradeSide: TradeSide = .buy
-    @State private var inputMode: InputMode = .usd
+    @State private var localSearchText: String = ""
+    @State private var selectedTradeCoin: CoinModel? = nil
+    @State private var inputMode: TradeInputMode = .usd
     @State private var tradeInputText: String = ""
     @State private var showTradeAlert: Bool = false
     @State private var tradeAlertMessage: String = ""
@@ -47,12 +213,16 @@ struct PortfolioView: View {
         return Double(trimmed)
     }
     
+    private var tradeSide: TradeType {
+        .buy
+    }
+    
     private var activeCoin: CoinModel? {
-        guard let selectedCoin else { return nil }
-        return vm.allCoinsUnfiltered.first(where: { $0.id == selectedCoin.id })
-        ?? vm.allCoins.first(where: { $0.id == selectedCoin.id })
-        ?? vm.portfolioCoins.first(where: { $0.id == selectedCoin.id })
-        ?? selectedCoin
+        guard let selectedTradeCoin else { return nil }
+        return vm.allCoinsUnfiltered.first(where: { $0.id == selectedTradeCoin.id })
+        ?? vm.allCoins.first(where: { $0.id == selectedTradeCoin.id })
+        ?? vm.portfolioCoins.first(where: { $0.id == selectedTradeCoin.id })
+        ?? selectedTradeCoin
     }
     
     private var selectedCoinSymbol: String {
@@ -60,52 +230,34 @@ struct PortfolioView: View {
     }
     
     private var currentPrice: Double {
-        activeCoin?.currentPrice ?? 0
+        let price = activeCoin?.currentPrice ?? 0
+        guard price.isFinite, price >= 0 else { return 0 }
+        return price
     }
     
-    private var currentHoldings: Double {
-        guard let coinID = activeCoin?.id ?? selectedCoin?.id else { return 0 }
-        let holdings = vm.portfolioCoins.first(where: { $0.id == coinID })?.currentHoldings ?? activeCoin?.currentHoldings ?? 0
-        guard holdings.isFinite, holdings >= 0 else { return 0 }
-        return holdings
-    }
-    
-    private var tradeType: TradeType {
-        tradeSide == .buy ? .buy : .sell
-    }
-    
-    private var tradeCoinAmount: Double {
+    private var tradeCoinAmountFromInput: Double {
         guard let input = parsedInput, input > 0 else { return 0 }
-        switch inputMode {
-        case .usd:
+        
+        if inputMode == .usd {
             guard currentPrice > 0 else { return 0 }
             return input / currentPrice
-        case .coin:
-            return input
         }
+        
+        return input
     }
     
     private var tradeUSDValue: Double {
-        guard let input = parsedInput, input > 0 else { return 0 }
-        switch inputMode {
-        case .usd:
-            return input
-        case .coin:
-            return input * currentPrice
+        if inputMode == .usd {
+            return max(parsedInput ?? 0, 0)
         }
-    }
-    
-    private var projectedCashBalance: Double {
-        switch tradeSide {
-        case .buy:
-            return cashBalance - tradeUSDValue
-        case .sell:
-            return cashBalance + tradeUSDValue
-        }
+        
+        let quantity = tradeCoinAmountFromInput
+        guard quantity > 0 else { return 0 }
+        return quantity * currentPrice
     }
     
     private var validationMessage: String? {
-        guard selectedCoin != nil else {
+        guard selectedTradeCoin != nil else {
             return "Select a coin to trade."
         }
         
@@ -121,12 +273,12 @@ struct PortfolioView: View {
             return "Price is unavailable. Try again in a moment."
         }
         
-        let quantity = tradeCoinAmount
+        let quantity = tradeCoinAmountFromInput
         guard quantity > 0, tradeUSDValue > 0 else {
             return "Trade amount must be greater than zero."
         }
         
-        return vm.tradeValidationMessage(coin: coin, type: tradeType, quantity: quantity)
+        return vm.tradeValidationMessage(coin: coin, type: .buy, quantity: quantity)
     }
     
     private var isTradeValid: Bool {
@@ -137,25 +289,19 @@ struct PortfolioView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    SearchBarView(searchText: $vm.searchText)
+                    SearchBarView(searchText: $localSearchText)
                     coinLogoList
-                    
-                    if selectedCoin != nil {
-                        tradeSection
-                    }
                 }
             }
             .navigationTitle("Trade")
             .toolbar {
                 if showsDismissButton {
                     ToolbarItem(placement: .topBarLeading) {
-                        XMarkButton()
+                        Button(action: dismissTradeScreen) {
+                            Image(systemName: "xmark")
+                                .tint(.primary)
+                        }
                     }
-                }
-            }
-            .onChange(of: vm.searchText) { _, newValue in
-                if newValue.isEmpty {
-                    removeSelectedCoin()
                 }
             }
             .onAppear {
@@ -164,10 +310,18 @@ struct PortfolioView: View {
             .onChange(of: preselectedCoin?.id) { _, _ in
                 applyPreselectedCoinIfNeeded()
             }
+            .onDisappear {
+                localSearchText = ""
+            }
             .alert("Trade Error", isPresented: $showTradeAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text(tradeAlertMessage)
+            }
+            .sheet(item: $selectedTradeCoin, onDismiss: resetTradeDraft) { _ in
+                buyTradeSheet
+                    .presentationDetents([.fraction(0.6), .large])
+                    .presentationDragIndicator(.visible)
             }
         }
         .background(.clear)
@@ -187,205 +341,146 @@ extension PortfolioView {
     
     private var popularCoins: [CoinModel] {
         popularCoinIDs.compactMap { id in
-            vm.allCoins.first(where: { $0.id == id })
+            searchableCoins.first(where: { $0.id == id })
+        }
+    }
+    
+    private var searchableCoins: [CoinModel] {
+        vm.allCoinsUnfiltered.isEmpty ? vm.allCoins : vm.allCoinsUnfiltered
+    }
+    
+    private var filteredSearchCoins: [CoinModel] {
+        let query = localSearchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return searchableCoins }
+        
+        return searchableCoins.filter { coin in
+            coin.name.lowercased().contains(query) ||
+            coin.symbol.lowercased().contains(query) ||
+            coin.id.lowercased().contains(query)
         }
     }
     
     private var coinSelectionCoins: [CoinModel] {
-        vm.searchText.isEmpty ? popularCoins : vm.allCoins
+        localSearchText.isEmpty ? popularCoins : filteredSearchCoins
+    }
+
+    private var topGainerCoins: [CoinModel] {
+        searchableCoins
+            .compactMap { coin -> (coin: CoinModel, change: Double)? in
+                guard let change = coin.priceChangePercentage24H, change.isFinite else { return nil }
+                return (coin, change)
+            }
+            .sorted { $0.change > $1.change }
+            .prefix(10)
+            .map(\.coin)
     }
     
     private var coinLogoList: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 10) {
-                ForEach(coinSelectionCoins) { coin in
-                    CoinLogoView(coin: coin)
-                        .padding(.vertical, 6)
-                        .frame(width: 75)
-                        .onTapGesture {
-                            if reduceMotion {
-                                updateSelectedCoin(coin: coin)
-                            } else {
-                                withAnimation(.easeIn) {
-                                    updateSelectedCoin(coin: coin)
-                                }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Popular")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.theme.secondaryText)
+                .padding(.horizontal)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 10) {
+                    ForEach(coinSelectionCoins) { coin in
+                        CoinLogoView(coin: coin)
+                            .padding(.vertical, 6)
+                            .frame(width: 75)
+                            .onTapGesture {
+                                presentBuySheet(for: coin)
                             }
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(selectedCoin?.id == coin.id ? Color.theme.green.opacity(0.2) : Color.clear)
-                        )
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(selectedTradeCoin?.id == coin.id ? Color.theme.green.opacity(0.2) : Color.clear)
+                            )
+                    }
                 }
+                .frame(height: 120)
+                .padding(.leading)
             }
-            .frame(height: 120)
-            .padding(.leading)
+            
+            topGainersSection
         }
     }
-    
-    private var tradeSection: some View {
-        VStack(spacing: 14) {
-            coinHeader
-            
-            Picker("Trade Side", selection: $tradeSide) {
-                ForEach(TradeSide.allCases) { side in
-                    Text(side.rawValue).tag(side)
-                }
-            }
-            .pickerStyle(.segmented)
-            
-            HStack(spacing: 12) {
-                tradeInfoCard(title: "Cash Balance", value: cashBalance.asCurrencyWith2Decimals(), color: Color.theme.accent)
-                tradeInfoCard(
-                    title: "Holdings",
-                    value: "\(formattedCoinAmount(currentHoldings)) \(selectedCoinSymbol)",
-                    color: Color.primary
-                )
-            }
-            
-            tradeInputCard
-            tradePreviewCard
-            
-            if let validationMessage, !tradeInputText.isEmpty {
-                Text(validationMessage)
-                    .font(.footnote)
-                    .foregroundStyle(Color.theme.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            
-            Button {
-                confirmTrade()
-            } label: {
-                Text(tradeSide == .buy ? "Confirm Buy" : "Confirm Sell")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(tradeSide == .buy ? Color.theme.green : Color.theme.red, in: RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(.white)
-            }
-            .disabled(!isTradeValid)
-            .opacity(isTradeValid ? 1.0 : 0.45)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.theme.accent.opacity(0.2), lineWidth: 1)
-        )
-        .padding()
-        .animation(reduceMotion ? nil : .easeInOut, value: tradeInputText)
-        .animation(reduceMotion ? nil : .easeInOut, value: tradeSide)
-    }
-    
-    private var coinHeader: some View {
-        HStack {
-            AsyncImage(url: URL(string: activeCoin?.image ?? "")) { image in
-                image.resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 40, height: 40)
-            } placeholder: {
-                Color.gray.opacity(0.2)
-            }
-            .frame(width: 40, height: 40)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(activeCoin?.name ?? "")
-                    .font(.headline)
-                Text(selectedCoinSymbol)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.theme.secondaryText)
-            }
-            
-            Spacer()
-            
-            Text(currentPrice.asCurrencyWithAdaptiveDecimals())
-                .font(.title3)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.primary)
-        }
-    }
-    
-    private var tradeInputCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(inputMode == .usd ? "Trade Amount (USD)" : "Trade Quantity (\(selectedCoinSymbol))")
-                .font(.caption)
-                .foregroundStyle(Color.theme.secondaryText)
-            
-            TextField(inputMode == .usd ? "0.00" : "0.000000", text: $tradeInputText)
-                .keyboardType(.decimalPad)
-                .font(.title3)
-                .fontWeight(.semibold)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-            
-            Button {
-                toggleInputMode()
-            } label: {
-                Text("Switch to \(inputMode == .usd ? "COIN" : "USD")")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.theme.accent)
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.theme.accent.opacity(0.05))
-        )
-    }
-    
-    private var tradePreviewCard: some View {
+
+    private var topGainersSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Preview")
-                .font(.caption)
-                .foregroundStyle(Color.theme.secondaryText)
-            
-            if tradeCoinAmount > 0, tradeUSDValue > 0, selectedCoin != nil {
-                Text(
-                    "You will \(tradeSide.rawValue.lowercased()) \(formattedCoinAmount(tradeCoinAmount)) " +
-                    "\(selectedCoinSymbol) for \(tradeUSDValue.asCurrencyWith2Decimals())"
-                )
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(Color.primary)
-                
-                Text("Cash after trade: \(max(projectedCashBalance, 0).asCurrencyWith2Decimals())")
-                    .font(.footnote)
-                    .foregroundStyle(Color.theme.secondaryText)
-            } else {
-                Text("Enter a trade amount to see the estimate.")
-                    .font(.footnote)
-                    .foregroundStyle(Color.theme.secondaryText)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.theme.accent.opacity(0.05))
-        )
-    }
-    
-    private func tradeInfoCard(title: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(Color.theme.secondaryText)
-            
-            Text(value)
+            Text("Today's Top Gainers")
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundStyle(color)
-                .lineLimit(1)
+                .foregroundStyle(Color.theme.secondaryText)
+                .padding(.horizontal)
+            
+            VStack(spacing: 0) {
+                ForEach(topGainerCoins) { coin in
+                    Button {
+                        presentBuySheet(for: coin)
+                    } label: {
+                        CoinRowView(coin: coin, showHoldingsColumn: false, showChangeBackground: false)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    if coin.id != topGainerCoins.last?.id {
+                        Divider()
+                            .padding(.leading, 16)
+                    }
+                }
+            }
+            .padding(.horizontal, 5)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.theme.accent.opacity(0.05))
-        )
     }
     
-    private func updateSelectedCoin(coin: CoinModel) {
-        selectedCoin = coin
+    private var buyTradeSheet: some View {
+        TradeOverlayPanelContent(
+            tradeSide: .buy,
+            coinName: activeCoin?.name ?? "",
+            coinSymbol: selectedCoinSymbol,
+            inputText: $tradeInputText,
+            inputMode: inputMode,
+            availableHoldingsText: nil,
+            canSellAll: false,
+            estimatedValueText: tradeUSDValue.asCurrencyWithAdaptiveDecimals(),
+            currentPriceText: currentPrice.asCurrencyWithAdaptiveDecimals(),
+            errorText: tradeErrorText,
+            isConfirmEnabled: isTradeValid,
+            onClose: dismissBuySheet,
+            onConfirm: confirmTrade,
+            onSellAll: {},
+            onToggleInputMode: toggleInputMode
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.theme.background.ignoresSafeArea())
+    }
+    
+    private var tradeErrorText: String? {
+        if let validationMessage, !tradeInputText.isEmpty {
+            return validationMessage
+        }
+        return nil
+    }
+        
+    private func presentBuySheet(for coin: CoinModel) {
+        selectedTradeCoin = coin
+        inputMode = .usd
         tradeInputText = ""
+        tradeAlertMessage = ""
+        showTradeAlert = false
+        AppHaptics.impact(.light)
+    }
+    
+    private func dismissBuySheet() {
+        selectedTradeCoin = nil
+    }
+    
+    private func resetTradeDraft() {
+        tradeInputText = ""
+        inputMode = .usd
+        tradeAlertMessage = ""
+        showTradeAlert = false
     }
     
     private func confirmTrade() {
@@ -397,17 +492,17 @@ extension PortfolioView {
             return
         }
         
-        let quantity = tradeCoinAmount
+        let quantity = tradeCoinAmountFromInput
         let executionResult = vm.executeTrade(
             coin: coin,
-            type: tradeType,
+            type: .buy,
             quantity: quantity,
             tradeHistoryStore: tradeHistoryStore
         )
         
         switch executionResult {
-        case .success(let result):
-            selectedCoin = coin.updateHoldings(amount: result.updatedHoldings)
+        case .success:
+            dismissBuySheet()
         case .failure(let error):
             tradeAlertMessage = error.userMessage
             showTradeAlert = true
@@ -428,7 +523,7 @@ extension PortfolioView {
     }
     
     private func toggleInputMode() {
-        let nextMode: InputMode = inputMode == .usd ? .coin : .usd
+        let nextMode: TradeInputMode = inputMode == .usd ? .coin : .usd
         
         if let value = parsedInput, value > 0, currentPrice > 0 {
             let convertedValue: Double
@@ -446,30 +541,42 @@ extension PortfolioView {
         inputMode = nextMode
     }
     
-    private func formattedInputValue(_ value: Double, mode: InputMode) -> String {
+    private func formattedInputValue(_ value: Double, mode: TradeInputMode) -> String {
+        guard value.isFinite, value > 0 else { return "" }
+        
         switch mode {
         case .usd:
             return String(format: "%.2f", value)
         case .coin:
-            return String(format: "%.6f", value)
+            return formattedCoinInput(value)
         }
     }
     
-    private func formattedCoinAmount(_ value: Double) -> String {
-        let fixed = String(format: "%.6f", value)
-        return fixed
-            .replacingOccurrences(of: #"([0-9])0+$"#, with: "$1", options: .regularExpression)
-            .replacingOccurrences(of: #"\.$"#, with: "", options: .regularExpression)
-    }
-    
-    private func removeSelectedCoin() {
-        selectedCoin = nil
-        vm.searchText = ""
+    private func formattedCoinInput(_ value: Double) -> String {
+        guard value.isFinite, value > 0 else { return "0" }
+        
+        let scale: Double = 10_000_000
+        let truncated = (value * scale).rounded(.down) / scale
+        
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = false
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 7
+        
+        return formatter.string(from: NSNumber(value: truncated)) ?? "0"
     }
     
     private func applyPreselectedCoinIfNeeded() {
         guard let preselectedCoin else { return }
-        updateSelectedCoin(coin: preselectedCoin)
+        presentBuySheet(for: preselectedCoin)
+    }
+    
+    private func dismissTradeScreen() {
+        localSearchText = ""
+        resetTradeDraft()
+        dismiss()
     }
     
 }

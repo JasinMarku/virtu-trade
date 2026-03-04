@@ -22,20 +22,14 @@ struct DetailLoadingView: View {
 }
 
 struct DetailView: View {
-    private enum TradeSide: String, CaseIterable, Identifiable {
-        case buy = "Buy"
-        case sell = "Sell"
-        
-        var id: String { rawValue }
-    }
-    
     @EnvironmentObject private var homeVM: HomeViewModel
     @EnvironmentObject private var watchlistStore: WatchlistStore
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
     @State private var showDescriptionSheet: Bool = false
-    @State private var tradeSide: TradeSide = .buy
+    @State private var tradeSide: TradeType = .buy
+    @State private var tradeInputMode: TradeInputMode = .usd
     @State private var showTradeSheet: Bool = false
-    @State private var tradeQuantityText: String = ""
+    @State private var tradeInputText: String = ""
     @State private var sellAllAmountRaw: Double?
     @State private var tradeErrorMessage: String?
     @StateObject private var vm: DetailViewModel
@@ -236,10 +230,21 @@ extension DetailView {
         exactHoldingsInputString(currentHoldings)
     }
     
-    private var parsedTradeQuantity: Double? {
-        let trimmed = tradeQuantityText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var parsedTradeInput: Double? {
+        let trimmed = tradeInputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         return Double(trimmed)
+    }
+    
+    private var inputCoinQuantity: Double {
+        guard let input = parsedTradeInput, input > 0 else { return 0 }
+        
+        if tradeSide == .buy, tradeInputMode == .usd {
+            guard currentPrice > 0 else { return 0 }
+            return input / currentPrice
+        }
+        
+        return input
     }
     
     private var effectiveTradeQuantity: Double? {
@@ -248,10 +253,17 @@ extension DetailView {
             guard holdings > 0 else { return nil }
             return holdings
         }
-        return parsedTradeQuantity
+        
+        let quantity = inputCoinQuantity
+        guard quantity > 0 else { return nil }
+        return quantity
     }
     
-    private var estimatedTradeValue: Double {
+    private var estimatedTradeUSDValue: Double {
+        if tradeSide == .buy, tradeInputMode == .usd {
+            return max(parsedTradeInput ?? 0, 0)
+        }
+        
         guard let quantity = effectiveTradeQuantity, quantity > 0 else { return 0 }
         return quantity * currentPrice
     }
@@ -271,15 +283,11 @@ extension DetailView {
         return (unrealizedPnL / costBasisValue) * 100
     }
     
-    private var tradeType: TradeType {
-        tradeSide == .buy ? .buy : .sell
-    }
-    
     private var tradeValidationMessage: String? {
         guard let quantity = effectiveTradeQuantity else {
             return "Enter a valid quantity."
         }
-        return homeVM.tradeValidationMessage(coin: tradeCoin, type: tradeType, quantity: quantity)
+        return homeVM.tradeValidationMessage(coin: tradeCoin, type: tradeSide, quantity: quantity)
     }
     
     private var tradeErrorText: String? {
@@ -287,7 +295,7 @@ extension DetailView {
             return tradeErrorMessage
         }
         
-        guard !tradeQuantityText.isEmpty else { return nil }
+        guard !tradeInputText.isEmpty else { return nil }
         return tradeValidationMessage
     }
     
@@ -340,10 +348,6 @@ extension DetailView {
         )
     }
     
-    private var tradeEstimateLabel: String {
-        tradeSide == .buy ? "Estimated cost" : "Estimated proceeds"
-    }
-    
     private var tradePanelHeight: CGFloat { 430 }
     
     private var tradeOverlay: some View {
@@ -365,139 +369,42 @@ extension DetailView {
     }
     
     private var tradeOverlayPanel: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(tradeSide.rawValue) \(tradeCoin.symbol.uppercased())")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(Color.primary)
-                    Text(tradeCoin.name)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.theme.secondaryText)
-                }
-                .padding(.vertical, 10)
-                
-                Spacer()
-                
-                Button(action: closeTradeSheet) {
-                    Image(systemName: "xmark")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.theme.secondaryText)
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-            }
-            
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Quantity")
-                        .font(.caption)
-                        .foregroundStyle(Color.theme.secondaryText)
-                    
-                    Spacer()
-                    
-                    if tradeSide == .sell {
-                        Button {
-                            fillSellAllQuantity()
-                        } label: {
-                            Text("Sell All")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.theme.red)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(currentHoldings <= holdingEpsilon)
-                        .opacity(currentHoldings > holdingEpsilon ? 1 : 0.45)
-                    }
-                }
-                
-                if tradeSide == .sell {
-                    Text("Available: \(availableHoldingsText) \(tradeCoin.symbol.uppercased())")
-                        .font(.caption)
-                        .foregroundStyle(Color.theme.secondaryText)
-                        .accessibilityLabel("Available \(availableHoldingsText) \(tradeCoin.symbol.uppercased())")
-                }
-                
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    TextField("0.00", text: $tradeQuantityText)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 34, weight: .bold))
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                    
-                    Text(tradeCoin.symbol.uppercased())
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(Color.theme.secondaryText)
-                }
-                
-                Rectangle()
-                    .fill(Color.theme.secondaryText.opacity(0.35))
-                    .frame(height: 1)
-            }
-            
-            VStack(spacing: 8) {
-                HStack {
-                    Text(tradeEstimateLabel)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.theme.secondaryText)
-                        .fontWeight(.semibold)
-                    Spacer()
-                    Text(estimatedTradeValue.asCurrencyWithAdaptiveDecimals())
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(Color.primary)
-                }
-                
-                HStack {
-                    Text("Price")
-                        .font(.caption)
-                        .foregroundStyle(Color.theme.secondaryText)
-                        .fontWeight(.semibold)
-                    Spacer()
-                    Text(currentPrice.asCurrencyWithAdaptiveDecimals())
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.theme.secondaryText)
-                }
-            }
-            
-            if let tradeErrorText {
-                Text(tradeErrorText)
-                    .font(.footnote)
-                    .foregroundStyle(Color.theme.red)
-            }
-            
-            Button(action: executeTrade) {
-                Text(tradeSide == .buy ? "Buy" : "Sell")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(
-                        tradeSide == .buy ? Color.theme.green : Color.theme.red,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    )
-                    .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-            .disabled(!isTradeValid)
-            .opacity(isTradeValid ? 1 : 0.45)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 20)
-        .padding(.bottom, 28)
+        TradeOverlayPanelContent(
+            tradeSide: tradeSide,
+            coinName: tradeCoin.name,
+            coinSymbol: tradeCoin.symbol,
+            inputText: $tradeInputText,
+            inputMode: tradeInputMode,
+            availableHoldingsText: tradeSide == .sell ? availableHoldingsText : nil,
+            canSellAll: tradeSide == .sell && currentHoldings > holdingEpsilon,
+            estimatedValueText: estimatedTradeUSDValue.asCurrencyWithAdaptiveDecimals(),
+            currentPriceText: currentPrice.asCurrencyWithAdaptiveDecimals(),
+            errorText: tradeErrorText,
+            isConfirmEnabled: isTradeValid,
+            onClose: closeTradeSheet,
+            onConfirm: executeTrade,
+            onSellAll: fillSellAllQuantity,
+            onToggleInputMode: toggleTradeInputMode
+        )
         .frame(maxWidth: .infinity, minHeight: tradePanelHeight, alignment: .topLeading)
         .background(
-            Color.theme.background.opacity(0.96)
+            Color.theme.background.opacity(0.985)
                 .ignoresSafeArea(edges: .bottom)
         )
-        .onChange(of: tradeQuantityText) { _, _ in
+        .onChange(of: tradeInputText) { _, _ in
             tradeErrorMessage = nil
             guard tradeSide == .sell, let sellAllAmountRaw else { return }
             let expectedText = exactHoldingsInputString(sellAllAmountRaw)
-            if tradeQuantityText != expectedText {
+            if tradeInputText != expectedText {
                 self.sellAllAmountRaw = nil
             }
         }
         .onChange(of: tradeSide) { _, _ in
             tradeErrorMessage = nil
             sellAllAmountRaw = nil
+            if tradeSide == .sell {
+                tradeInputMode = .coin
+            }
         }
     }
     
@@ -560,10 +467,11 @@ extension DetailView {
             .replacingOccurrences(of: #"\.$"#, with: "", options: .regularExpression)
     }
     
-    private func presentTradeSheet(for side: TradeSide) {
+    private func presentTradeSheet(for side: TradeType) {
         AppHaptics.impact(.light)
         tradeSide = side
-        tradeQuantityText = ""
+        tradeInputMode = side == .buy ? .usd : .coin
+        tradeInputText = ""
         sellAllAmountRaw = nil
         tradeErrorMessage = nil
         withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
@@ -575,8 +483,23 @@ extension DetailView {
         guard currentHoldings > holdingEpsilon else { return }
         AppHaptics.impact(.light)
         sellAllAmountRaw = currentHoldings
-        tradeQuantityText = exactHoldingsInputString(currentHoldings)
+        tradeInputText = exactHoldingsInputString(currentHoldings)
         tradeErrorMessage = nil
+    }
+    
+    private func toggleTradeInputMode() {
+        guard tradeSide == .buy else { return }
+        
+        let nextMode: TradeInputMode = tradeInputMode == .usd ? .coin : .usd
+        if let value = parsedTradeInput, value > 0, currentPrice > 0 {
+            let convertedValue: Double = tradeInputMode == .usd ? (value / currentPrice) : (value * currentPrice)
+            tradeInputText = formattedInputValue(convertedValue, mode: nextMode)
+        } else {
+            tradeInputText = ""
+        }
+        
+        sellAllAmountRaw = nil
+        tradeInputMode = nextMode
     }
     
     private func exactHoldingsInputString(_ value: Double) -> String {
@@ -595,11 +518,22 @@ extension DetailView {
         return formatter.string(from: NSNumber(value: truncated)) ?? "0"
     }
     
+    private func formattedInputValue(_ value: Double, mode: TradeInputMode) -> String {
+        guard value.isFinite, value > 0 else { return "" }
+        
+        switch mode {
+        case .usd:
+            return String(format: "%.2f", value)
+        case .coin:
+            return exactHoldingsInputString(value)
+        }
+    }
+    
     private func closeTradeSheet() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
             showTradeSheet = false
         }
-        tradeQuantityText = ""
+        tradeInputText = ""
         sellAllAmountRaw = nil
         tradeErrorMessage = nil
     }
@@ -611,7 +545,7 @@ extension DetailView {
             return
         }
         
-        switch homeVM.executeTrade(coin: tradeCoin, type: tradeType, quantity: quantity, tradeHistoryStore: tradeHistoryStore) {
+        switch homeVM.executeTrade(coin: tradeCoin, type: tradeSide, quantity: quantity, tradeHistoryStore: tradeHistoryStore) {
         case .success:
             dismissKeyboard()
             AppHaptics.notification(.success)

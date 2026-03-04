@@ -10,6 +10,20 @@ import SwiftUI
 struct PortfolioValueHeaderView: View {
     let portfolioValue: Double
     let availableCash: Double
+    let dayChangeValue: Double?
+    let dayChangePercentage: Double?
+
+    init(
+        portfolioValue: Double,
+        availableCash: Double,
+        dayChangeValue: Double? = nil,
+        dayChangePercentage: Double? = nil
+    ) {
+        self.portfolioValue = portfolioValue
+        self.availableCash = availableCash
+        self.dayChangeValue = dayChangeValue
+        self.dayChangePercentage = dayChangePercentage
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -18,11 +32,28 @@ struct PortfolioValueHeaderView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.theme.secondaryText)
             
-            Text(portfolioValue.asCurrencyWith2Decimals())
-                .font(.system(size: 29, weight: .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(Color.primary)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(portfolioValue.asCurrencyWith2Decimals())
+                    .font(.system(size: 29, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .foregroundStyle(Color.primary)
+
+                if let dayChangeValue,
+                   let dayChangePercentage {
+                    HStack(spacing: 4) {
+                        Image(systemName: dayChangeValue >= 0 ? "chevron.up" : "chevron.down")
+                            .font(.caption2.weight(.semibold))
+
+                        Text(formattedDayChange(value: dayChangeValue, percentage: dayChangePercentage))
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(dayChangeValue >= 0 ? Color.theme.green : Color.theme.red)
+                    .padding(.bottom, 2)
+                }
+            }
             
             Text("Cash available: \(availableCash.asCurrencyWith2Decimals())")
                 .font(.footnote)
@@ -31,6 +62,13 @@ struct PortfolioValueHeaderView: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func formattedDayChange(value: Double, percentage: Double) -> String {
+        let sign = value >= 0 ? "+" : "-"
+        let dollars = abs(value).asCurrencyWith2Decimals()
+        let percent = abs(percentage).asNumberString()
+        return "\(sign)\(dollars) (\(sign)\(percent)%)"
     }
 }
 
@@ -68,7 +106,7 @@ struct HomeStatsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 4) {
             accountSummary
             marketStatsStrip
         }
@@ -84,39 +122,38 @@ struct HomeStatsView: View {
     
     private var marketStatsStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(Array(marketStats.enumerated()), id: \.element.id) { index, stat in
-                    HStack(spacing: 6) {
+            LazyHStack(spacing: 14) {
+                ForEach(marketStats) { stat in
+                    VStack(alignment: .leading, spacing: 8) {
                         Text(stat.title)
                             .font(.caption)
                             .foregroundStyle(Color.theme.secondaryText)
                             .lineLimit(1)
                         
                         Text(stat.value)
-                            .font(.caption)
+                            .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundStyle(valueColor(for: stat))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.85)
                     }
-                    .fixedSize(horizontal: true, vertical: false)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    
-                    if index < (marketStats.count - 1) {
-                        Rectangle()
-                            .fill(Color.theme.secondaryText.opacity(0.2))
-                            .frame(width: 1, height: 16)
-                            .padding(.vertical, 8)
-                    }
+                    .frame(minWidth: 138, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.theme.accentBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.theme.secondaryText.opacity(0.12), lineWidth: 1)
+                    )
                 }
             }
-            .padding(.horizontal, 2)
+            .scrollTargetLayout()
         }
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.theme.accentBackground)
-        )
+        .frame(minHeight: 102)
+        .scrollTargetBehavior(.viewAligned)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
     

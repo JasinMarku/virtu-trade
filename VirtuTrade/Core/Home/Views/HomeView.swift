@@ -191,6 +191,40 @@ extension HomeView {
         }
     }
 
+    private var portfolio24hChangeValue: Double {
+        vm.portfolioCoins.reduce(0) { partialResult, coin in
+            let holdings = coin.currentHoldings ?? 0
+            let currentPrice = coin.currentPrice
+
+            guard holdings.isFinite,
+                  currentPrice.isFinite,
+                  holdings >= 0,
+                  currentPrice >= 0,
+                  let pctChange = coin.priceChangePercentage24H,
+                  pctChange.isFinite else {
+                return partialResult
+            }
+
+            let currentValue = holdings * currentPrice
+            let ratio = 1 + (pctChange / 100)
+            guard currentValue.isFinite, ratio.isFinite, ratio > 0 else {
+                return partialResult
+            }
+
+            let previousValue = currentValue / ratio
+            guard previousValue.isFinite else {
+                return partialResult
+            }
+
+            return partialResult + (currentValue - previousValue)
+        }
+    }
+
+    private var portfolio24hChangePercentage: Double {
+        guard portfolioHoldingsValue > 0 else { return 0 }
+        return (portfolio24hChangeValue / portfolioHoldingsValue) * 100
+    }
+
     private var watchlistCoins: [CoinModel] {
         let sourceCoins = vm.allCoinsUnfiltered.isEmpty ? vm.allCoins : vm.allCoinsUnfiltered
         return watchlistStore.ids.compactMap { id in
@@ -205,7 +239,9 @@ extension HomeView {
     private var balanceHeader: some View {
         PortfolioValueHeaderView(
             portfolioValue: portfolioHoldingsValue,
-            availableCash: simulatedCashBalance
+            availableCash: simulatedCashBalance,
+            dayChangeValue: portfolio24hChangeValue,
+            dayChangePercentage: portfolio24hChangePercentage
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
@@ -276,7 +312,7 @@ extension HomeView {
                 portfolioValue: portfolioHoldingsValue,
                 availableCash: simulatedCashBalance
             )
-                .padding(.bottom, 12)
+                .padding(.bottom, 6)
             
             HStack {
                 Text("Activity")
@@ -343,9 +379,9 @@ extension HomeView {
                     showPortfolioEditor.toggle()
                 }) {
                     Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(Color.white)
-                        .frame(width: 56, height: 56)
+                        .frame(width: 65, height: 65)
                         .background(
                             Circle()
                                 .fill(Color.theme.accent)
@@ -355,7 +391,7 @@ extension HomeView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add Portfolio Asset")
                 .padding(.trailing, 20)
-                .padding(.bottom, 112)
+                .padding(.bottom, 28)
             }
         }
     }
