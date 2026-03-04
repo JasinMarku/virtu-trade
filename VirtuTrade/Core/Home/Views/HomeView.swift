@@ -22,6 +22,7 @@ struct HomeView: View {
     }
     
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
+    @AppStorage(TradingSession.StorageKeys.profileID) private var profileID: String = TradingProfile.seriousInvestor.id
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @EnvironmentObject private var vm: HomeViewModel
     @EnvironmentObject private var newsService: NewsService
@@ -191,7 +192,7 @@ extension HomeView {
         }
     }
 
-    private var portfolio24hChangeValue: Double {
+    private var portfolioInvestedValue: Double {
         vm.portfolioCoins.reduce(0) { partialResult, coin in
             let holdings = coin.currentHoldings ?? 0
             let currentPrice = coin.currentPrice
@@ -199,30 +200,46 @@ extension HomeView {
             guard holdings.isFinite,
                   currentPrice.isFinite,
                   holdings >= 0,
-                  currentPrice >= 0,
-                  let pctChange = coin.priceChangePercentage24H,
-                  pctChange.isFinite else {
+                  currentPrice >= 0 else {
                 return partialResult
             }
-
-            let currentValue = holdings * currentPrice
-            let ratio = 1 + (pctChange / 100)
-            guard currentValue.isFinite, ratio.isFinite, ratio > 0 else {
-                return partialResult
+            
+            let position = tradeHistoryStore.position(for: coin.id)
+            let averageCost = position.averageCost
+            
+            // Keep the metric stable for older holdings that may not have trade history cost basis.
+            guard averageCost.isFinite, averageCost > 0 else {
+                return partialResult + (holdings * currentPrice)
             }
-
-            let previousValue = currentValue / ratio
-            guard previousValue.isFinite else {
-                return partialResult
-            }
-
-            return partialResult + (currentValue - previousValue)
+            
+            return partialResult + (holdings * averageCost)
         }
     }
+    
+    private var portfolioTodayChangeValue: Double {
+        portfolioHoldingsValue - portfolioInvestedValue
+    }
 
-    private var portfolio24hChangePercentage: Double {
-        guard portfolioHoldingsValue > 0 else { return 0 }
-        return (portfolio24hChangeValue / portfolioHoldingsValue) * 100
+    private var portfolioTodayChangePercentage: Double {
+        guard portfolioInvestedValue > 0 else { return 0 }
+        return (portfolioTodayChangeValue / portfolioInvestedValue) * 100
+    }
+    
+    private var totalAccountBalance: Double {
+        portfolioHoldingsValue + simulatedCashBalance
+    }
+    
+    private var profileStartingBalance: Double {
+        TradingSession.startingBalance(forProfileID: profileID)
+    }
+    
+    private var accountAllTimeChangeValue: Double {
+        totalAccountBalance - profileStartingBalance
+    }
+    
+    private var accountAllTimeChangePercentage: Double {
+        guard profileStartingBalance > 0 else { return 0 }
+        return (accountAllTimeChangeValue / profileStartingBalance) * 100
     }
 
     private var watchlistCoins: [CoinModel] {
@@ -239,9 +256,12 @@ extension HomeView {
     private var balanceHeader: some View {
         PortfolioValueHeaderView(
             portfolioValue: portfolioHoldingsValue,
+            accountBalance: totalAccountBalance,
             availableCash: simulatedCashBalance,
-            dayChangeValue: portfolio24hChangeValue,
-            dayChangePercentage: portfolio24hChangePercentage
+            dayChangeValue: portfolioTodayChangeValue,
+            dayChangePercentage: portfolioTodayChangePercentage,
+            allTimeChangeValue: accountAllTimeChangeValue,
+            allTimeChangePercentage: accountAllTimeChangePercentage
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
@@ -355,7 +375,7 @@ extension HomeView {
             
             Spacer()
             
-            Text(showPortfolio ? "Portfolio" : "Live Prices")
+            Text(showPortfolio ? "Portfolio" : "Home")
                 .font(.headline)
                 .fontWeight(.heavy)
                 .foregroundStyle(Color.primary)

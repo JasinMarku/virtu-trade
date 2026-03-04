@@ -26,82 +26,48 @@ struct SettingsView: View {
     private var appVersionText: String {
         let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let buildVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "Version \(shortVersion) (\(buildVersion))"
+        return "Version \(shortVersion) (Build \(buildVersion))"
+    }
+    
+    private var selectedThemeMode: AppThemeMode {
+        AppThemeMode(rawValue: themeModeRawValue) ?? .system
     }
     
     var body: some View {
         NavigationStack {
-            List {
-                Section("Appearance") {
-                    Picker("Theme", selection: Binding<AppThemeMode>(
-                        get: { AppThemeMode(rawValue: themeModeRawValue) ?? .system },
-                        set: { themeModeRawValue = $0.rawValue }
-                    )) {
-                        ForEach(AppThemeMode.allCases) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+            ZStack {
+                Color.theme.background
+                    .ignoresSafeArea()
                 
-                Section("Accessibility") {
-                    Toggle("Reduce Motion", isOn: $reduceMotion)
-                    Toggle("Haptics", isOn: $hapticsEnabled)
-                }
-                
-                Section("Trading") {
-                    Button {
-                        showProfileSwitcher = true
-                    } label: {
-                        Label("Switch Trading Profile", systemImage: "person.crop.circle.badge.checkmark")
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 22) {
+                        sectionHeader("Appearance")
+                        appearanceCard
+                        
+                        sectionHeader("Accessibility")
+                        accessibilityCard
+                        
+                        sectionHeader("Trading")
+                        tradingCard
+                        
+                        sectionHeader("About")
+                        aboutCard
+                        
+                        Text(appVersionText)
+                            .font(.footnote)
+                            .foregroundStyle(Color.theme.secondaryText.opacity(0.85))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.top, 2)
+                            .padding(.bottom, 8)
+                            .accessibilityLabel(appVersionText)
                     }
-                    
-                    Button(role: .destructive) {
-                        showResetConfirmation = true
-                    } label: {
-                        Label("Reset Trading Session", systemImage: "arrow.counterclockwise")
-                    }
-                }
-                
-                Section("About") {
-                    aboutDeveloperRow
-                    
-                    if let linkedInURL {
-                        Link(destination: linkedInURL) {
-                            aboutLinkRow(title: "LinkedIn", iconName: "linkedin")
-                        }
-                    }
-                    
-                    if let githubURL {
-                        Link(destination: githubURL) {
-                            aboutLinkRow(title: "GitHub", iconName: "github")
-                        }
-                    }
-                    
-                    if let coinGeckoURL {
-                        Link(destination: coinGeckoURL) {
-                            HStack(spacing: 10) {
-                                Image("cglogo")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 24, height: 24)
-                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                Text("Powered by CoinGecko")
-                                Spacer()
-                                Image(systemName: "arrow.up.right.square")
-                                    .font(.footnote)
-                                    .foregroundStyle(Color.theme.secondaryText)
-                            }
-                        }
-                    }
-                    
-                    Text(appVersionText)
-                        .font(.footnote)
-                        .foregroundStyle(Color.theme.secondaryText)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 22)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Color.theme.background.ignoresSafeArea())
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showProfileSwitcher) {
                 TradingProfileFlowView(
                     mode: .switchProfile,
@@ -136,6 +102,203 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
+    private var appearanceCard: some View {
+        cardContainer {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Theme")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+                
+                HStack(spacing: 8) {
+                    ForEach(AppThemeMode.allCases) { mode in
+                        Button {
+                            themeModeRawValue = mode.rawValue
+                        } label: {
+                            Text(mode.displayName)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(selectedThemeMode == mode ? Color.white : Color.theme.secondaryText)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(selectedThemeMode == mode ? Color.theme.accent : Color.clear)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(5)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.theme.background.opacity(0.65))
+                )
+            }
+            .padding(16)
+        }
+    }
+    
+    private var accessibilityCard: some View {
+        cardContainer {
+            VStack(spacing: 0) {
+                toggleRow(title: "Reduce Motion", isOn: $reduceMotion)
+                cardDivider
+                toggleRow(title: "Haptics", isOn: $hapticsEnabled)
+            }
+        }
+    }
+    
+    private var tradingCard: some View {
+        cardContainer {
+            VStack(spacing: 0) {
+                tradingActionRow(
+                    title: "Switch Trading Profile",
+                    subtitle: "Change your simulated trading account type.",
+                    titleColor: Color.primary
+                ) {
+                    showProfileSwitcher = true
+                }
+                
+                cardDivider
+                
+                tradingActionRow(
+                    title: "Reset Trading Session",
+                    subtitle: "Clears holdings and trade history and resets your balance.",
+                    titleColor: Color.theme.red
+                ) {
+                    showResetConfirmation = true
+                }
+            }
+        }
+    }
+    
+    private var aboutCard: some View {
+        cardContainer {
+            VStack(spacing: 0) {
+                VStack(spacing: 8) {
+                    Image("roundedlogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 34, height: 34)
+
+                    
+                    Text("VirtuTrade")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(Color.primary)
+                    
+                    Text("by Jasin Marku")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.theme.secondaryText)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                
+                cardDivider
+                
+                VStack(spacing: 0) {
+                    if let linkedInURL {
+                        Link(destination: linkedInURL) {
+                            aboutLinkRow(title: "LinkedIn", iconName: "linkedin")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    if linkedInURL != nil, githubURL != nil || coinGeckoURL != nil {
+                        cardDivider
+                    }
+                    
+                    if let githubURL {
+                        Link(destination: githubURL) {
+                            aboutLinkRow(title: "GitHub", iconName: "github")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    if githubURL != nil, coinGeckoURL != nil {
+                        cardDivider
+                    }
+                    
+                    if let coinGeckoURL {
+                        Link(destination: coinGeckoURL) {
+                            aboutLinkRow(title: "Powered by CoinGecko", iconName: "cglogo", iconIsTemplate: false)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.caption.weight(.semibold))
+            .tracking(0.7)
+            .foregroundStyle(Color.theme.secondaryText.opacity(0.9))
+            .padding(.horizontal, 2)
+    }
+    
+    @ViewBuilder
+    private func cardContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.theme.accentBackground.opacity(0.9))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.theme.secondaryText.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.14), radius: 10, x: 0, y: 6)
+    }
+    
+    private var cardDivider: some View {
+        Rectangle()
+            .fill(Color.theme.secondaryText.opacity(0.15))
+            .frame(height: 1)
+    }
+    
+    private func toggleRow(title: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.primary)
+            
+            Spacer(minLength: 0)
+            
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(Color.theme.accent)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+    }
+    
+    private func tradingActionRow(title: String, subtitle: String, titleColor: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(titleColor)
+                    
+                    Text(subtitle)
+                        .font(.body)
+                        .foregroundStyle(Color.theme.secondaryText)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer(minLength: 0)
+                
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.theme.secondaryText.opacity(0.85))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+        }
+        .buttonStyle(.plain)
+    }
+    
     private func applyProfileSwitch(_ profile: TradingProfile) {
         let resolvedBalance = TradingSession.applyProfile(profile, markOnboardingComplete: false)
         resetSandbox(to: resolvedBalance)
@@ -153,39 +316,34 @@ extension SettingsView {
         tradeHistoryStore.clearTrades()
         simulatedCashBalance = cashBalance
     }
-    
-    private var aboutDeveloperRow: some View {
-        HStack(spacing: 12) {
-            Image("logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 28, height: 28)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Developer")
-                    .font(.caption)
-                    .foregroundStyle(Color.theme.secondaryText)
-                Text("Jasin Marku")
-                    .font(.subheadline)
-            }
-            
-            Spacer()
-        }
-    }
-    
-    private func aboutLinkRow(title: String, iconName: String) -> some View {
+
+    private func aboutLinkRow(title: String, iconName: String, iconIsTemplate: Bool = true) -> some View {
         HStack(spacing: 10) {
-            Image(iconName)
-                .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 18)
+            Group {
+                if iconIsTemplate {
+                    Image(iconName)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(iconName)
+                        .resizable()
+                        .scaledToFit()
+                }
+            }
+            .frame(width: 20, height: 20)
+            
             Text(title)
-            Spacer()
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.primary)
+            
+            Spacer(minLength: 0)
+            
             Image(systemName: "arrow.up.right.square")
                 .font(.footnote)
-                .foregroundStyle(Color.theme.secondaryText)
+                .foregroundStyle(Color.theme.secondaryText.opacity(0.9))
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 }
