@@ -3,11 +3,8 @@
 Real market prices. Simulated trades.
 
 ## App Preview
+![EA513120-8FBD-474C-ADD8-E1B919D0712D_1_102_a](https://github.com/user-attachments/assets/2e538bbf-cbd6-4a8e-b488-6d1cfd93f91e)
 
-![VirtuTrade Preview](docs/screenshots/app-preview.png)
-![Market View](docs/screenshots/home.png)
-![Portfolio View](docs/screenshots/portfolio.png)
-![Trade Flow](docs/screenshots/trade.png)
 
 ## About the App
 
