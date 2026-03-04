@@ -77,6 +77,20 @@ struct HomeStatsView: View {
     @EnvironmentObject private var vm: HomeViewModel
     let portfolioValue: Double
     let availableCash: Double
+    let showAccountSummary: Bool
+    let showMarketStats: Bool
+    
+    init(
+        portfolioValue: Double,
+        availableCash: Double,
+        showAccountSummary: Bool = true,
+        showMarketStats: Bool = true
+    ) {
+        self.portfolioValue = portfolioValue
+        self.availableCash = availableCash
+        self.showAccountSummary = showAccountSummary
+        self.showMarketStats = showMarketStats
+    }
     
     private struct MarketTickerItem: Identifiable {
         let id: String
@@ -106,9 +120,14 @@ struct HomeStatsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 4) {
-            accountSummary
-            marketStatsStrip
+        VStack(spacing: 6) {
+            if showAccountSummary {
+                accountSummary
+            }
+            
+            if showMarketStats {
+                marketStatsStrip
+            }
         }
         .padding(.horizontal, 14)
     }

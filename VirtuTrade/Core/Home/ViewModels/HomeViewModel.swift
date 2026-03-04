@@ -8,6 +8,38 @@
 import Foundation
 import Combine
 
+struct AccountSnapshot: Identifiable, Codable, Equatable {
+    let timestamp: Date
+    let totalPortfolioValue: Double
+    
+    var id: String {
+        "\(timestamp.timeIntervalSince1970)-\(totalPortfolioValue)"
+    }
+}
+
+private enum AccountSnapshotStore {
+    private static let snapshotsKey = "vt_account_snapshots"
+    private static let maxSnapshotCount = 2_000
+    
+    static func load(defaults: UserDefaults = .standard) -> [AccountSnapshot] {
+        guard let data = defaults.data(forKey: snapshotsKey) else {
+            return []
+        }
+        
+        guard let decoded = try? JSONDecoder().decode([AccountSnapshot].self, from: data) else {
+            return []
+        }
+        
+        return decoded.sorted { $0.timestamp < $1.timestamp }
+    }
+    
+    static func save(_ snapshots: [AccountSnapshot], defaults: UserDefaults = .standard) {
+        let trimmedSnapshots = Array(snapshots.suffix(maxSnapshotCount))
+        guard let data = try? JSONEncoder().encode(trimmedSnapshots) else { return }
+        defaults.set(data, forKey: snapshotsKey)
+    }
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
     struct TradeExecutionResult {
@@ -59,6 +91,7 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading: Bool = false                // Flag for loading state during data fetch
     @Published var searchText: String = ""                // Holds text entered by the user for coin search
     @Published var sortOption: SortOption = .holdings
+    @Published private(set) var accountSnapshots: [AccountSnapshot]
     
     private let coinDataService = CoinDataService()       // Service to fetch all coin data
     private let marketDataService = MarketDataService()   // Service to fetch market data
@@ -70,7 +103,9 @@ final class HomeViewModel: ObservableObject {
     }
     
     init() {
+        accountSnapshots = AccountSnapshotStore.load()
         addSubscribers()
+        appendAccountSnapshotIfNeeded(force: true)
     }
     
     private func addSubscribers() {
@@ -107,6 +142,7 @@ final class HomeViewModel: ObservableObject {
             .sink { [weak self] (returnedStats) in
                 self?.statistics = returnedStats         // Updates statistics with global market data
                 self?.isLoading = false                  // Ends loading once data is received
+                self?.appendAccountSnapshotIfNeeded()
             }
             .store(in: &cancellables)
     }
@@ -166,6 +202,7 @@ final class HomeViewModel: ObservableObject {
             timestamp: Date()
         )
         tradeHistoryStore.addTrade(trade: trade)
+        appendAccountSnapshotIfNeeded()
         
         return .success(
             TradeExecutionResult(
@@ -184,6 +221,7 @@ final class HomeViewModel: ObservableObject {
     func clearPortfolioStateImmediately() {
         portfolioCoins = []
         searchText = ""
+        appendAccountSnapshotIfNeeded(force: true)
     }
     
     func reloadData() {
@@ -361,5 +399,35 @@ final class HomeViewModel: ObservableObject {
         }
         
         return nil
+    }
+    
+    private var portfolioHoldingsValue: Double {
+        portfolioCoins
+            .map(\.currentHoldingsValue)
+            .filter { $0.isFinite && $0 >= 0 }
+            .reduce(0, +)
+    }
+    
+    private var totalAccountValue: Double {
+        portfolioHoldingsValue + cashBalance
+    }
+    
+    private func appendAccountSnapshotIfNeeded(force: Bool = false) {
+        let currentValue = totalAccountValue
+        guard currentValue.isFinite, currentValue >= 0 else { return }
+        
+        if !force, let lastSnapshot = accountSnapshots.last {
+            let difference = abs(lastSnapshot.totalPortfolioValue - currentValue)
+            guard difference > 0.0001 else { return }
+        }
+        
+        accountSnapshots.append(
+            AccountSnapshot(
+                timestamp: Date(),
+                totalPortfolioValue: currentValue
+            )
+        )
+        
+        AccountSnapshotStore.save(accountSnapshots)
     }
 }

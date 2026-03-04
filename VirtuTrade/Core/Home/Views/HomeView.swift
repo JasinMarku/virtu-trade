@@ -57,7 +57,7 @@ struct HomeView: View {
                 homeHeader
                 
                 SearchBarView(searchText: $vm.searchText)
-                    .padding(.top, -15)
+                    .padding(.vertical, -10)
                 
                 if !showPortfolio {
                     liveCategoryButtons
@@ -294,13 +294,19 @@ extension HomeView {
             }
             .padding(.horizontal)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
     }
     
     private var liveListHeader: some View {
         VStack(spacing: 0) {
             balanceHeader
-//            latestNewsCard
+            HomeStatsView(
+                portfolioValue: portfolioHoldingsValue,
+                availableCash: simulatedCashBalance,
+                showAccountSummary: false,
+                showMarketStats: true
+            )
+            .padding(.bottom, 8)
             watchlistCard
             columnTitles
         }
@@ -308,11 +314,7 @@ extension HomeView {
     
     private var portfolioListHeader: some View {
         VStack(spacing: 0) {
-            HomeStatsView(
-                portfolioValue: portfolioHoldingsValue,
-                availableCash: simulatedCashBalance
-            )
-                .padding(.bottom, 6)
+            balanceHeader
             
             HStack {
                 Text("Activity")
