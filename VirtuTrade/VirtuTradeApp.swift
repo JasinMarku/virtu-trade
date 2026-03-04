@@ -38,6 +38,12 @@ enum AppThemeMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum AppTab: Hashable {
+    case home
+    case portfolio
+    case news
+}
+
 enum AppHaptics {
     private static let enabledKey = "vt_haptics_enabled"
     
@@ -73,8 +79,10 @@ struct VirtuTradeApp: App {
     }
     
     @StateObject private var vm = HomeViewModel()
+    @StateObject private var newsService = NewsService()
     @StateObject private var watchlistStore = WatchlistStore()
     @StateObject private var tradeHistoryStore = TradeHistoryStore()
+    @State private var selectedTab: AppTab = .home
     @State private var showLaunchView: Bool = true
     @AppStorage("vt_theme_mode") private var themeModeRawValue: String = AppThemeMode.system.rawValue
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
@@ -90,11 +98,37 @@ struct VirtuTradeApp: App {
         WindowGroup {
             
             ZStack {
-                NavigationStack {
-                    HomeView()
+                TabView(selection: $selectedTab) {
+                    NavigationStack {
+                        HomeView(screenMode: .live) {
+                            selectedTab = .news
+                        }
                         .toolbar(.hidden)
+                    }
+                    .tabItem {
+                        Label("Home", systemImage: "house")
+                    }
+                    .tag(AppTab.home)
+                    
+                    NavigationStack {
+                        PortfolioRootView()
+                            .toolbar(.hidden)
+                    }
+                    .tabItem {
+                        Label("Portfolio", systemImage: "chart.pie")
+                    }
+                    .tag(AppTab.portfolio)
+                    
+                    NavigationStack {
+                        NewsView()
+                    }
+                    .tabItem {
+                        Label("News", systemImage: "newspaper")
+                    }
+                    .tag(AppTab.news)
                 }
                 .environmentObject(vm)
+                .environmentObject(newsService)
                 .environmentObject(watchlistStore)
                 .environmentObject(tradeHistoryStore)
                 

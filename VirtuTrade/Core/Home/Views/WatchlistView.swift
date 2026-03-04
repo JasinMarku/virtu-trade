@@ -12,7 +12,6 @@ struct WatchlistView: View {
     @EnvironmentObject private var watchlistStore: WatchlistStore
     
     @State private var selectedCoin: CoinModel? = nil
-    @State private var showDetailView: Bool = false
     
     private var watchlistCoins: [CoinModel] {
         let sourceCoins = vm.allCoinsUnfiltered.isEmpty ? vm.allCoins : vm.allCoinsUnfiltered
@@ -46,7 +45,6 @@ struct WatchlistView: View {
                         .onTapGesture {
                             AppHaptics.impact(.soft)
                             selectedCoin = coin
-                            showDetailView = true
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
@@ -67,9 +65,14 @@ struct WatchlistView: View {
         .refreshable {
             vm.reloadData()
         }
-        .navigationDestination(isPresented: $showDetailView) {
-            if let _ = selectedCoin {
-                DetailLoadingView(coin: $selectedCoin)
+        .fullScreenCover(item: $selectedCoin) { coin in
+            NavigationStack {
+                DetailView(coin: coin)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            XMarkButton()
+                        }
+                    }
             }
         }
     }
