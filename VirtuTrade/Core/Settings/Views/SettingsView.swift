@@ -14,6 +14,7 @@ struct SettingsView: View {
     @AppStorage("vt_haptics_enabled") private var hapticsEnabled: Bool = true
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
+    @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
     @State private var showResetConfirmation: Bool = false
     
     private let coinGeckoURL = URL(string: "https://www.coingecko.com")
@@ -113,11 +114,13 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(DeveloperPreview.instance.homeVM)
+        .environmentObject(TradeHistoryStore())
 }
 
 extension SettingsView {
     private func resetPortfolio() {
         vm.resetPortfolio()
+        tradeHistoryStore.clearTrades()
         simulatedCashBalance = 100_000
     }
     

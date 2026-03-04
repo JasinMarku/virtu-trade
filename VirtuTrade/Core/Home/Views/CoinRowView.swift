@@ -47,7 +47,7 @@ extension CoinRowView {
                     .textCase(.uppercase)
                 
                 Text(coin.name)
-                    .font(.headline)
+                    .font(.caption)
                     .fontWeight(.regular)
                     .foregroundStyle(Color.primary.opacity(0.7))
             }
