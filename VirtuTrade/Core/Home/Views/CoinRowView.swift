@@ -11,6 +11,13 @@ struct CoinRowView: View {
     
     let coin: CoinModel
     let showHoldingsColumn: Bool
+    let showChangeBackground: Bool
+    
+    init(coin: CoinModel, showHoldingsColumn: Bool, showChangeBackground: Bool = true) {
+        self.coin = coin
+        self.showHoldingsColumn = showHoldingsColumn
+        self.showChangeBackground = showChangeBackground
+    }
     
     var body: some View {
         HStack(spacing: 0) {
@@ -88,7 +95,12 @@ extension CoinRowView {
             }
             .padding(2)
             .padding(.horizontal, 3)
-            .background(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green.opacity(0.2) : Color.theme.red.opacity(0.2), in: RoundedRectangle(cornerRadius: 6))
+            .background {
+                if showChangeBackground {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green.opacity(0.2) : Color.theme.red.opacity(0.2))
+                }
+            }
         }
         .frame(width: UIScreen.main.bounds.width / 3.5, alignment: .trailing)
     }
