@@ -23,6 +23,7 @@ struct PortfolioView: View {
     }
     
     let preselectedCoin: CoinModel?
+    let showsDismissButton: Bool
     @AppStorage("vt_sim_cash_balance") private var cashBalance: Double = 100_000
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @Environment(\.dismiss) private var dismiss
@@ -35,8 +36,9 @@ struct PortfolioView: View {
     @State private var showTradeAlert: Bool = false
     @State private var tradeAlertMessage: String = ""
     
-    init(preselectedCoin: CoinModel? = nil) {
+    init(preselectedCoin: CoinModel? = nil, showsDismissButton: Bool = true) {
         self.preselectedCoin = preselectedCoin
+        self.showsDismissButton = showsDismissButton
     }
     
     private var parsedInput: Double? {
@@ -145,8 +147,10 @@ struct PortfolioView: View {
             }
             .navigationTitle("Trade")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    XMarkButton()
+                if showsDismissButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        XMarkButton()
+                    }
                 }
             }
             .onChange(of: vm.searchText) { _, newValue in

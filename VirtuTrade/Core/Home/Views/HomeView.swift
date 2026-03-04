@@ -8,6 +8,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    enum ScreenMode {
+        case live
+        case portfolio
+    }
+    
     private enum LiveFilterMode: String, CaseIterable, Identifiable {
         case topGainers = "Top Gainers"
         case topVolume = "Top Volume"
@@ -19,16 +24,26 @@ struct HomeView: View {
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @EnvironmentObject private var vm: HomeViewModel
+    @EnvironmentObject private var newsService: NewsService
     @EnvironmentObject private var watchlistStore: WatchlistStore
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
-    @State private var showPortfolio: Bool = false     // animate right
     @State private var showPortfolioEditor: Bool = false // new sheet for adding
     @State private var showSettingsView: Bool = false
     @State private var selectedCoin: CoinModel? = nil
-    @State private var showDetailView: Bool = false
     @State private var showWatchlistView: Bool = false
     @State private var showTradeHistoryView: Bool = false
     @State private var selectedLiveFilterMode: LiveFilterMode? = nil
+    private let screenMode: ScreenMode
+    private let onViewAllNews: (() -> Void)?
+    
+    init(screenMode: ScreenMode = .live, onViewAllNews: (() -> Void)? = nil) {
+        self.screenMode = screenMode
+        self.onViewAllNews = onViewAllNews
+    }
+    
+    private var showPortfolio: Bool {
+        screenMode == .portfolio
+    }
     
     var body: some View {
         ZStack {
@@ -60,7 +75,7 @@ struct HomeView: View {
                 }
             }
             .animation(motionAwareAnimation, value: showPortfolio)
-            .sheet(isPresented: $showPortfolioEditor) {
+            .fullScreenCover(isPresented: $showPortfolioEditor) {
                 PortfolioView(preselectedCoin: nil)
                     .environmentObject(vm)
                     .environmentObject(tradeHistoryStore)
@@ -78,9 +93,14 @@ struct HomeView: View {
                 addPortfolioFAB
             }
         }
-        .navigationDestination(isPresented: $showDetailView) {
-            if let _ = selectedCoin {
-                DetailLoadingView(coin: $selectedCoin)
+        .fullScreenCover(item: $selectedCoin) { coin in
+            NavigationStack {
+                DetailView(coin: coin)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            XMarkButton()
+                        }
+                    }
             }
         }
         .navigationDestination(isPresented: $showWatchlistView) {
@@ -88,6 +108,9 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $showTradeHistoryView) {
             TradeHistoryView()
+        }
+        .task {
+            await newsService.loadIfNeeded()
         }
     }
 }
@@ -97,6 +120,7 @@ struct HomeView: View {
         HomeView()
     }
     .environmentObject(DeveloperPreview.instance.homeVM)
+    .environmentObject(NewsService())
     .environmentObject(WatchlistStore())
     .environmentObject(TradeHistoryStore())
 }
@@ -240,6 +264,7 @@ extension HomeView {
     private var liveListHeader: some View {
         VStack(spacing: 0) {
             balanceHeader
+//            latestNewsCard
             watchlistCard
             columnTitles
         }
@@ -299,16 +324,9 @@ extension HomeView {
             
             Spacer()
             
-            Button(action: {
-                AppHaptics.impact(.light)
-                
-                showPortfolio.toggle()
-            }, label: {
-                CircleButtonView(iconName: "chevron.right")
-                    .rotationEffect(Angle(degrees: showPortfolio ? 180 : 0))
-                    .animation(motionAwareAnimation, value: showPortfolio)
-            })
-            .accessibilityLabel(showPortfolio ? "Show Live Prices" : "Show Portfolio")
+            CircleButtonView(iconName: "info")
+                .hidden()
+                .accessibilityHidden(true)
         }
         .padding(.horizontal)
     }
@@ -337,7 +355,7 @@ extension HomeView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add Portfolio Asset")
                 .padding(.trailing, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, 112)
             }
         }
     }
@@ -345,7 +363,6 @@ extension HomeView {
     // For Coin Navigation
     private func segue(coin: CoinModel) {
         selectedCoin = coin
-        showDetailView.toggle()
     }
     
     private func openWatchlistView() {
@@ -422,6 +439,54 @@ extension HomeView {
         )
         .padding(.horizontal)
         .padding(.vertical, 4)
+    }
+    
+    private var latestNewsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Latest News")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button(action: openNewsView) {
+                    Text("View All")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.theme.accent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View all news")
+            }
+            
+            if let article = newsService.latestArticle {
+                Text(article.title)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.primary)
+                    .lineLimit(2)
+            } else if newsService.isLoading {
+                Text("Loading latest headline...")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.secondaryText)
+            } else {
+                Text("No news available right now.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.theme.secondaryText)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.theme.accentBackground)
+        )
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+    }
+    
+    private func openNewsView() {
+        AppHaptics.impact(.light)
+        onViewAllNews?()
     }
     
     private func watchlistRow(coin: CoinModel) -> some View {
