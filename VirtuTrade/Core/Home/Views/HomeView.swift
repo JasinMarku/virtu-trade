@@ -82,6 +82,10 @@ struct HomeView: View {
                     .presentationDetents([.fraction(0.8)])
                 
             }
+            
+            if showPortfolio {
+                addPortfolioFAB
+            }
         }
         .navigationDestination(isPresented: $showDetailView) {
             if let _ = selectedCoin {
@@ -302,17 +306,11 @@ extension HomeView {
         HStack {
             Button(action: {
                 AppHaptics.impact(.light)
-                
-                if showPortfolio {
-                    showPortfolioEditor.toggle()
-                } else {
-                    showSettingsView.toggle()
-                }
+                showSettingsView.toggle()
             }, label: {
-                CircleButtonView(iconName: showPortfolio ? "plus" : "info")
-                    .animation(.none, value: showPortfolio)
+                CircleButtonView(iconName: "info")
             })
-            .accessibilityLabel(showPortfolio ? "Add Portfolio Asset" : "Open Settings")
+            .accessibilityLabel("Open Settings")
             
             Spacer()
             
@@ -335,6 +333,35 @@ extension HomeView {
             .accessibilityLabel(showPortfolio ? "Show Live Prices" : "Show Portfolio")
         }
         .padding(.horizontal)
+    }
+    
+    private var addPortfolioFAB: some View {
+        VStack {
+            Spacer()
+            
+            HStack {
+                Spacer()
+                
+                Button(action: {
+                    AppHaptics.impact(.light)
+                    showPortfolioEditor.toggle()
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(Color.white)
+                        .frame(width: 56, height: 56)
+                        .background(
+                            Circle()
+                                .fill(Color.theme.accent)
+                        )
+                        .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 5)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add Portfolio Asset")
+                .padding(.trailing, 20)
+                .padding(.bottom, 24)
+            }
+        }
     }
     
     // For Coin Navigation
@@ -547,6 +574,7 @@ extension HomeView {
         .scrollIndicators(.hidden)
         .listStyle(.plain)
     }
+
 
     private func editPortfolioHolding(_ coin: CoinModel) {
         AppHaptics.impact(.light)
