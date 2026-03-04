@@ -1,93 +1,66 @@
 # VirtuTrade
-![VirtuTrade-1](https://github.com/user-attachments/assets/fd5d8367-c5c1-4196-8a67-551a664e7863)
 
-Cryptocurrency Tracking and Virtual Trading App that allows users to monitor crypto coins and simulate share holding using any real money. It's an ideal platform for those who want to learn and practice with crypto trading in a risk-free environment.
+Real market prices. Simulated trades.
 
-## Features
-- Real-time cryptocurrency price tracking
-- Virtual portfolio management
-- Detailed coin statistics and market data
-- Interactive price charts
-- Coin search functionality
-- Portfolio performance tracking
-- Dark/Light mode support
+## App Preview
 
-## Core Technologies
-- Swift 5
-- SwiftUI
-- Core Data (for local data persistence)
+![VirtuTrade Preview](docs/screenshots/app-preview.png)
+![Market View](docs/screenshots/home.png)
+![Portfolio View](docs/screenshots/portfolio.png)
+![Trade Flow](docs/screenshots/trade.png)
 
-## Architectures & Patterns
-- MVVM (Model-View-ViewModel)
-- Observable Pattern
-- Repository Pattern
-- Dependency Injection
+## About the App
 
-## APIs & Services
-- CoinGecko API (for cryptocurrency data)
-- URLSession for networking
-- Combine Framework for reactive programming
+VirtuTrade is a native iOS crypto trading simulator designed for realistic market practice without real-money risk. The app streams live market pricing and pairs it with a local simulation engine so users can learn trading behavior, portfolio dynamics, and execution discipline in a controlled environment.
 
+Built as a product-first experience, VirtuTrade focuses on clarity, responsiveness, and confidence at every step of the journey, from onboarding and discovery to trade execution and portfolio tracking.
 
-## Most Proud Of: Advanced Swift Charts Implementation
-One of the most exciting features of VirtuTrade is the interactive price chart powered by Swift Charts. This implementation goes beyond a simple line graph by incorporating:
+## Key Features
 
-- Dynamic color coding based on price trends (green for positive, red for negative, Based on 24hr Coin Performace)
-- Interactive drag gesture to explore price points
-- Customized axis and grid styling
-- Smooth cardinal interpolation for a more natural price curve
-```swift
-Chart {
-    ForEach(Array(zip(coin.sparklineIn7D?.price ?? [], 0...168)), id: \.1) { price, index in
-        LineMark(
-            x: .value("Time", index),
-            y: .value("Price", price)
-        )
-        .interpolationMethod(.cardinal)
-        if let selectedIndex, selectedIndex == index {
-            RuleMark (
-                x: .value("Time", index)
-            )
-            .foregroundStyle(Color.theme.secondaryText)
-            .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-        }
-    }
-}
-.chartXAxis(.hidden)
-.chartYScale(domain: .automatic(includesZero: false))
-.chartYAxis {
-    AxisMarks(position: .trailing) { _ in
-        AxisGridLine(centered: true, stroke: StrokeStyle(lineWidth: 0))
-        AxisValueLabel()
-    }
-}
-.frame(height: 200)
-.foregroundStyle(coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red)
-.shadow(color: coin.priceChangePercentage24H ?? 0 >= 0 ? Color.theme.green : Color.theme.red, radius: 10, x: 0, y: 11)
-.overlay(
-    GeometryReader { proxy in
-        Rectangle()
-        .fill(.clear)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let index = Int((value.location.x / proxy.size.width) * CGFloat(priceData.count))
-                    if index >= 0 && index < priceData.count {
-                        if index != previousIndex {
-                            impactGenerator.impactOccurred()
-                            previousIndex = index
-                        }
-                        
-                        selectedIndex = index
-                        selectedPrice = priceData[index]
-                    }
-                }
-                .onEnded { _ in
-                    selectedIndex = nil
-                    selectedPrice = nil
-                }
-        )
-    }
-)
-```
+- Simulated buy/sell execution using virtual USD
+- Live crypto market browsing with search and sorting views
+- Portfolio tracking with holdings, value, and performance metrics
+- Trade flows designed for speed, feedback, and usability
+- Interactive market charts and value visualization
+- Crypto news feed integrated into the app experience
+- Trading profiles with configurable starting balances
+- Persistent local state for portfolio, history, and preferences
+
+## Design Philosophy
+
+VirtuTrade is intentionally minimal and information-forward.
+
+- Clear hierarchy: essential information is visible first, secondary context follows
+- Responsive interactions: fast state updates and smooth transitions
+- Practical realism: simulation behavior mirrors real decision pressure without financial exposure
+- Polished states: loading, empty, and error states are handled with the same care as happy paths
+- Visual consistency: cohesive spacing, typography, and controls across Home, Portfolio, Trade, and Settings
+
+## Engineering Highlights
+
+- SwiftUI-first architecture optimized for maintainable, state-driven UI
+- Combine-powered reactive pipelines for synchronized market and portfolio updates
+- Core Data-backed persistence for holdings and portfolio state durability
+- URLSession networking with structured decoding, error propagation, and safe request handling
+- CoinGecko-backed live market data integration
+- Asynchronous data flow designed to keep UI updates smooth and predictable
+- Local simulation engine for trade execution and account value updates
+- Reliability-focused implementation with explicit UI states and defensive data handling
+
+## Privacy
+
+VirtuTrade is a simulated trading product.
+
+- Trades are simulated locally using virtual USD
+- No real cryptocurrency purchases, deposits, withdrawals, or custody
+- No brokerage or exchange execution
+- No personal financial account linking
+- Uses public market/news data APIs for pricing and content
+
+## App Store
+
+[Download on the App Store](APP_STORE_LINK)
+
+## Credits
+
+- Market data powered by [CoinGecko](https://www.coingecko.com/)
