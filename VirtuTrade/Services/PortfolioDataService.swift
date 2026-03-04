@@ -20,6 +20,7 @@ final class PortfolioDataService {
     private let container: NSPersistentContainer
     private let containerName: String = "PortfolioContainer"
     private let entityName: String = "PortfolioEntity"
+    private var isPersistentStoreReady: Bool = false
     
     // Published array of portfolio entities to notify subscribers about updates
     @Published var savedEntities: [PortfolioEntity] = []
@@ -34,7 +35,10 @@ final class PortfolioDataService {
             guard let self else { return }
             if let error {
                 self.logger.error("Error loading Core Data persistent stores: \(error.localizedDescription, privacy: .public)")
+                return
             }
+            
+            self.isPersistentStoreReady = true
 
             Task { @MainActor in
                 self.getPortfolio() // Load initial portfolio data
@@ -49,6 +53,11 @@ final class PortfolioDataService {
     ///   - coin: The `CoinModel` to add/update in the portfolio.
     ///   - amount: The amount of the coin to save; removes the coin if amount <= 0.
     func updatePortfolio(coin: CoinModel, amount: Double) {
+        guard isPersistentStoreReady else {
+            logger.error("Core Data store is unavailable; skipping portfolio update for \(coin.id, privacy: .public).")
+            return
+        }
+        
         if let entity = savedEntities.first(where: { $0.coinID == coin.id }) {
             if amount > 0 {
                 update(entity: entity, amount: amount)
@@ -62,6 +71,11 @@ final class PortfolioDataService {
     
     /// Deletes all holdings from persistence.
     func removeAllPortfolio() {
+        guard isPersistentStoreReady else {
+            logger.error("Core Data store is unavailable; skipping portfolio reset.")
+            return
+        }
+        
         savedEntities.forEach { container.viewContext.delete($0) }
         applyChanges()
     }
@@ -70,6 +84,11 @@ final class PortfolioDataService {
     
     /// Fetches the saved portfolio entities from Core Data.
     private func getPortfolio() {
+        guard isPersistentStoreReady else {
+            savedEntities = []
+            return
+        }
+        
         let request = NSFetchRequest<PortfolioEntity>(entityName: entityName)
         do {
             savedEntities = try container.viewContext.fetch(request)
@@ -83,6 +102,7 @@ final class PortfolioDataService {
     ///   - coin: The `CoinModel` to add.
     ///   - amount: The amount of the coin.
     private func add(coin: CoinModel, amount: Double) {
+        guard isPersistentStoreReady else { return }
         let entity = PortfolioEntity(context: container.viewContext)
         entity.coinID = coin.id
         entity.amount = amount
@@ -94,6 +114,7 @@ final class PortfolioDataService {
     ///   - entity: The `PortfolioEntity` to update.
     ///   - amount: The new amount to save.
     private func update(entity: PortfolioEntity, amount: Double) {
+        guard isPersistentStoreReady else { return }
         entity.amount = amount
         applyChanges() // Save changes and refresh portfolio
     }
@@ -101,12 +122,14 @@ final class PortfolioDataService {
     /// Deletes a coin from the portfolio.
     /// - Parameter entity: The `PortfolioEntity` to delete.
     private func delete(entity: PortfolioEntity) {
+        guard isPersistentStoreReady else { return }
         container.viewContext.delete(entity)
         applyChanges() // Save changes and refresh portfolio
     }
     
     /// Saves changes to the Core Data context.
     private func save() {
+        guard isPersistentStoreReady else { return }
         guard container.viewContext.hasChanges else { return }
         do {
             try container.viewContext.save()

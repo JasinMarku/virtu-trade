@@ -61,7 +61,7 @@ struct NewsView: View {
         .listStyle(.plain)
         .scrollIndicators(.hidden)
         .background(Color.theme.background)
-        .navigationTitle("News")
+        .navigationTitle("Crypto News")
         .task {
             await newsService.loadIfNeeded()
         }
