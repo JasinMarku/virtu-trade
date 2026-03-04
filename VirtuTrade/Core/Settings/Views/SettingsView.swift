@@ -12,9 +12,11 @@ struct SettingsView: View {
     @AppStorage("vt_theme_mode") private var themeModeRawValue: String = AppThemeMode.system.rawValue
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @AppStorage("vt_haptics_enabled") private var hapticsEnabled: Bool = true
-    @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
+    @AppStorage(TradingSession.StorageKeys.profileID) private var profileID: String = TradingProfile.seriousInvestor.id
+    @AppStorage(TradingSession.StorageKeys.cashBalance) private var simulatedCashBalance: Double = 100_000
     @EnvironmentObject private var vm: HomeViewModel
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
+    @State private var showProfileSwitcher: Bool = false
     @State private var showResetConfirmation: Bool = false
     
     private let coinGeckoURL = URL(string: "https://www.coingecko.com")
@@ -47,11 +49,17 @@ struct SettingsView: View {
                     Toggle("Haptics", isOn: $hapticsEnabled)
                 }
                 
-                Section("Portfolio") {
+                Section("Trading") {
+                    Button {
+                        showProfileSwitcher = true
+                    } label: {
+                        Label("Switch Trading Profile", systemImage: "person.crop.circle.badge.checkmark")
+                    }
+                    
                     Button(role: .destructive) {
                         showResetConfirmation = true
                     } label: {
-                        Label("Reset Portfolio", systemImage: "arrow.counterclockwise")
+                        Label("Reset Trading Session", systemImage: "arrow.counterclockwise")
                     }
                 }
                 
@@ -94,13 +102,23 @@ struct SettingsView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Color.theme.background.ignoresSafeArea())
-            .alert("Reset Portfolio?", isPresented: $showResetConfirmation) {
+            .sheet(isPresented: $showProfileSwitcher) {
+                TradingProfileFlowView(
+                    mode: .switchProfile,
+                    initialProfile: TradingSession.currentProfile()
+                ) { selectedProfile in
+                    applyProfileSwitch(selectedProfile)
+                } onClose: {
+                    showProfileSwitcher = false
+                }
+            }
+            .alert("Reset Trading Session?", isPresented: $showResetConfirmation) {
                 Button("Cancel", role: .cancel) { }
                 Button("Reset", role: .destructive) {
-                    resetPortfolio()
+                    resetTradingSession()
                 }
             } message: {
-                Text("This clears all holdings and resets paper cash balance to $100,000.")
+                Text("This clears holdings and trade history, then resets cash to your current profile starting balance.")
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -118,10 +136,22 @@ struct SettingsView: View {
 }
 
 extension SettingsView {
-    private func resetPortfolio() {
+    private func applyProfileSwitch(_ profile: TradingProfile) {
+        let resolvedBalance = TradingSession.applyProfile(profile, markOnboardingComplete: false)
+        resetSandbox(to: resolvedBalance)
+        showProfileSwitcher = false
+    }
+    
+    private func resetTradingSession() {
+        let resetBalance = TradingSession.startingBalance(forProfileID: profileID)
+        resetSandbox(to: resetBalance)
+    }
+    
+    private func resetSandbox(to cashBalance: Double) {
         vm.resetPortfolio()
+        vm.clearPortfolioStateImmediately()
         tradeHistoryStore.clearTrades()
-        simulatedCashBalance = 100_000
+        simulatedCashBalance = cashBalance
     }
     
     private var aboutDeveloperRow: some View {

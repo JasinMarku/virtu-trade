@@ -181,6 +181,11 @@ final class HomeViewModel: ObservableObject {
         portfolioDataService.removeAllPortfolio()
     }
     
+    func clearPortfolioStateImmediately() {
+        portfolioCoins = []
+        searchText = ""
+    }
+    
     func reloadData() {
         // Triggers data reload from API services
         isLoading = true                                 // Sets loading state to true during fetch
