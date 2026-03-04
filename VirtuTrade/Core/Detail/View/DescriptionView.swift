@@ -35,7 +35,7 @@ struct DescriptionView: View {
                                     .renderingMode(.template)
                                     .foregroundStyle(Color.theme.accentTwo)
                                     .frame(width: 17, height: 17)
-                                if let redditURL = redditURL, let url = URL(string: redditURL) {
+                                if let url = URL.safeHTTPURL(from: redditURL) {
                                     Link("Reddit", destination: url)
                                         .font(.body)
                                         .fontWeight(.medium)
@@ -49,7 +49,7 @@ struct DescriptionView: View {
                                     .renderingMode(.template)
                                     .foregroundStyle(Color.theme.accentTwo)
                                     .frame(width: 17, height: 17)
-                                if let websiteURL = websiteURL, let url = URL(string: websiteURL) {
+                                if let url = URL.safeHTTPURL(from: websiteURL) {
                                     Link("Website", destination: url)
                                         .font(.body)
                                         .fontWeight(.medium)

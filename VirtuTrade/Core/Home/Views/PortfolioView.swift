@@ -74,6 +74,9 @@ struct TradeOverlayPanelContent: View {
                     Text(coinName)
                         .font(.subheadline)
                         .foregroundStyle(Color.theme.secondaryText)
+                    Text("Real market prices. Simulated trades.")
+                        .font(.caption)
+                        .foregroundStyle(Color.theme.secondaryText)
                 }
                 .padding(.vertical, 10)
                 

@@ -105,9 +105,15 @@ final class CoinDetailDataService {
                 
                 guard (200...299).contains(response.statusCode) else {
                     let snippet = response.bodySnippet(maxLength: 200)
+#if DEBUG
                     logger.error(
                         "Coin detail HTTP failure coinID=\(trimmedCoinID, privacy: .public) status=\(response.statusCode, privacy: .public) body=\(snippet, privacy: .public)"
                     )
+#else
+                    logger.error(
+                        "Coin detail HTTP failure coinID=\(trimmedCoinID, privacy: .public) status=\(response.statusCode, privacy: .public)"
+                    )
+#endif
                     throw CoinDetailServiceError.badStatusCode(statusCode: response.statusCode, bodySnippet: snippet)
                 }
                 
@@ -115,9 +121,15 @@ final class CoinDetailDataService {
                     return try JSONDecoder().decode(CoinDetailModel.self, from: response.data)
                 } catch let decodingError as DecodingError {
                     let snippet = response.bodySnippet(maxLength: 200)
+#if DEBUG
                     logger.error(
                         "Coin detail decode failure coinID=\(trimmedCoinID, privacy: .public) error=\(String(describing: decodingError), privacy: .public) body=\(snippet, privacy: .public)"
                     )
+#else
+                    logger.error(
+                        "Coin detail decode failure coinID=\(trimmedCoinID, privacy: .public) error=\(String(describing: decodingError), privacy: .public)"
+                    )
+#endif
                     throw CoinDetailServiceError.decoding(decodingError, bodySnippet: snippet)
                 } catch {
                     throw CoinDetailServiceError.unknown(error)
