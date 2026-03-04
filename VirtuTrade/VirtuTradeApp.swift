@@ -41,7 +41,7 @@ struct TradingProfile: Identifiable, Hashable {
     static let highRoller = TradingProfile(
         id: "high_roller",
         title: "High Roller",
-        startingBalance: 250_000,
+        startingBalance: 1_000_000,
         shortDescription: "Simulate larger risk exposure."
     )
     static let custom = TradingProfile(
@@ -77,8 +77,8 @@ enum TradingSession {
         static let hasCompletedOnboarding = "vt_has_completed_onboarding"
     }
     
-    static let minCustomBalance: Double = 1_000
-    static let maxCustomBalance: Double = 500_000
+    static let minCustomBalance: Double = 100
+    static let maxCustomBalance: Double = 1_000_000
     
     static func initializeIfNeeded(defaults: UserDefaults = .standard) {
         guard defaults.bool(forKey: StorageKeys.hasCompletedOnboarding) == false else {
@@ -456,7 +456,7 @@ private extension TradingProfileFlowView {
                     .minimumScaleFactor(0.65)
             }
             
-            Text("Practice real crypto trading with fake money. Zero risk, 100% realistic.")
+            Text("Practice real crypto trading with virtual USD. Real market prices. Simulated trades.")
                 .font(.title3)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(OnboardingPalette.textSecondary)
@@ -470,8 +470,8 @@ private extension TradingProfileFlowView {
             }
             .buttonStyle(PrimaryButtonStyle())
             
-            Text("By continuing, you agree to our Terms & Privacy Policy")
-                .font(.footnote)
+            Text("VirtuTrade is a simulated trading environment using virtual USD. No real cryptocurrencies are bought or sold.")
+                .font(.caption2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(OnboardingPalette.textMuted)
                 .padding(.horizontal, 6)

@@ -9,13 +9,24 @@ import Foundation
 
 @MainActor
 final class NewsService: ObservableObject {
+    private enum NewsServiceError: LocalizedError {
+        case invalidEndpoint
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidEndpoint:
+                return "News endpoint is unavailable."
+            }
+        }
+    }
+    
     @Published private(set) var articles: [NewsArticle] = []
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var errorMessage: String?
     
     private let session: URLSession
     private var hasLoaded: Bool = false
-    private let endpoint = URL(string: "https://min-api.cryptocompare.com/data/v2/news/?lang=EN")!
+    private let endpointString = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
     private let preferredSources = [
         "coindesk",
         "decrypt",
@@ -49,6 +60,10 @@ final class NewsService: ObservableObject {
         defer { isLoading = false }
         
         do {
+            guard let endpoint = URL.safeHTTPURL(from: endpointString) else {
+                throw NewsServiceError.invalidEndpoint
+            }
+            
             let (data, response) = try await session.data(from: endpoint)
             guard let httpResponse = response as? HTTPURLResponse,
                   (200...299).contains(httpResponse.statusCode) else {
@@ -67,6 +82,11 @@ final class NewsService: ObservableObject {
         } catch is CancellationError {
             return
         } catch {
+            if let serviceError = error as? NewsServiceError, articles.isEmpty {
+                errorMessage = serviceError.localizedDescription
+                return
+            }
+            
             if articles.isEmpty {
                 errorMessage = "Failed to load news. Pull to refresh."
             }

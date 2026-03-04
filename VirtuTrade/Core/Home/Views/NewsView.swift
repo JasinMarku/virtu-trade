@@ -70,7 +70,7 @@ struct NewsView: View {
         }
         .sheet(item: $selectedArticle) { article in
             Group {
-                if let articleURL = URL(string: article.url) {
+                if let articleURL = URL.safeHTTPURL(from: article.url) {
                     SafariView(url: articleURL)
                         .ignoresSafeArea()
                 } else {
