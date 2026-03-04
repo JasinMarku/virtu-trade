@@ -7,12 +7,38 @@
 
 import SwiftUI
 
+struct PortfolioValueHeaderView: View {
+    let portfolioValue: Double
+    let availableCash: Double
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Portfolio value")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.theme.secondaryText)
+            
+            Text(portfolioValue.asCurrencyWith2Decimals())
+                .font(.system(size: 29, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .foregroundStyle(Color.primary)
+            
+            Text("Cash available: \(availableCash.asCurrencyWith2Decimals())")
+                .font(.footnote)
+                .foregroundStyle(Color.theme.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 struct HomeStatsView: View {
     
     @EnvironmentObject private var vm: HomeViewModel
-    let totalAccountValue: Double
-    let availableCash: Double
     let portfolioValue: Double
+    let availableCash: Double
     
     private struct MarketTickerItem: Identifiable {
         let id: String
@@ -50,48 +76,9 @@ struct HomeStatsView: View {
     }
     
     private var accountSummary: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Total account value \(totalAccountValue.asCurrencyWith2Decimals())")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.theme.secondaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            
-            HStack(spacing: 10) {
-                accountSummaryItem(
-                    title: "Available Cash",
-                    value: availableCash.asCurrencyWith2Decimals()
-                )
-                
-                accountSummaryItem(
-                    title: "Portfolio Value",
-                    value: portfolioValue.asCurrencyWith2Decimals()
-                )
-            }
-        }
-    }
-    
-    private func accountSummaryItem(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(Color.theme.secondaryText)
-                .lineLimit(1)
-            
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-                .foregroundStyle(Color.primary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.theme.accentBackground)
+        PortfolioValueHeaderView(
+            portfolioValue: portfolioValue,
+            availableCash: availableCash
         )
     }
     
@@ -144,9 +131,8 @@ struct HomeStatsView: View {
 
 #Preview {
     HomeStatsView(
-        totalAccountValue: 102_345.67,
-        availableCash: 87_654.32,
-        portfolioValue: 14_691.35
+        portfolioValue: 14_691.35,
+        availableCash: 87_654.32
     )
     .environmentObject(DeveloperPreview.instance.homeVM)
 }

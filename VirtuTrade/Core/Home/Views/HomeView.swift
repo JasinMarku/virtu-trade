@@ -28,7 +28,6 @@ struct HomeView: View {
     @State private var showDetailView: Bool = false
     @State private var showWatchlistView: Bool = false
     @State private var showTradeHistoryView: Bool = false
-    @State private var portfolioEditorCoin: CoinModel? = nil
     @State private var selectedLiveFilterMode: LiveFilterMode? = nil
     
     var body: some View {
@@ -61,14 +60,6 @@ struct HomeView: View {
                 }
             }
             .animation(motionAwareAnimation, value: showPortfolio)
-            .sheet(item: $portfolioEditorCoin, onDismiss: {
-                portfolioEditorCoin = nil
-            }) { coin in
-                PortfolioView(preselectedCoin: coin)
-                    .environmentObject(vm)
-                    .environmentObject(tradeHistoryStore)
-                    .background(Color.theme.background.ignoresSafeArea())
-            }
             .sheet(isPresented: $showPortfolioEditor) {
                 PortfolioView(preselectedCoin: nil)
                     .environmentObject(vm)
@@ -176,10 +167,6 @@ extension HomeView {
         }
     }
 
-    private var totalAccountValue: Double {
-        simulatedCashBalance + portfolioHoldingsValue
-    }
-    
     private var watchlistCoins: [CoinModel] {
         let sourceCoins = vm.allCoinsUnfiltered.isEmpty ? vm.allCoins : vm.allCoinsUnfiltered
         return watchlistStore.ids.compactMap { id in
@@ -192,18 +179,10 @@ extension HomeView {
     }
 
     private var balanceHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("My balance")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.theme.secondaryText)
-            
-            Text(totalAccountValue.asCurrencyWith2Decimals())
-                .font(.system(size: 29, weight: .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .foregroundStyle(Color.primary)
-        }
+        PortfolioValueHeaderView(
+            portfolioValue: portfolioHoldingsValue,
+            availableCash: simulatedCashBalance
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.bottom, 8)
@@ -269,9 +248,8 @@ extension HomeView {
     private var portfolioListHeader: some View {
         VStack(spacing: 0) {
             HomeStatsView(
-                totalAccountValue: totalAccountValue,
-                availableCash: simulatedCashBalance,
-                portfolioValue: portfolioHoldingsValue
+                portfolioValue: portfolioHoldingsValue,
+                availableCash: simulatedCashBalance
             )
                 .padding(.bottom, 12)
             
@@ -528,64 +506,11 @@ extension HomeView {
                             AppHaptics.impact(.soft)
                             segue(coin: coin)
                         }
-                        .contextMenu {
-                            Button {
-                                editPortfolioHolding(coin)
-                            } label: {
-                                HStack {
-                                    Image(systemName: "pencil")
-                                    Text("Edit")
-                                }
-                            }
-
-                            Button(role: .destructive) {
-                                deletePortfolioHolding(coin)
-                            } label: {
-                                HStack {
-                                    Image(systemName: "trash")
-                                    Text("Delete")
-                                }
-                            }
-                        }
-                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                            Button {
-                                editPortfolioHolding(coin)
-                            } label: {
-                                HStack {
-                                    Image(systemName: "pencil")
-                                    Text("Edit")
-                                }
-                            }
-                            .tint(Color.theme.accent)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                deletePortfolioHolding(coin)
-                            } label: {
-                                HStack {
-                                    Image(systemName: "trash")
-                                    Text("Delete")
-                                }
-                            }
-                        }
                 }
             }
         }
         .scrollIndicators(.hidden)
         .listStyle(.plain)
-    }
-
-
-    private func editPortfolioHolding(_ coin: CoinModel) {
-        AppHaptics.impact(.light)
-
-        portfolioEditorCoin = coin
-    }
-
-    private func deletePortfolioHolding(_ coin: CoinModel) {
-        AppHaptics.impact(.light)
-
-        vm.updatePortfolio(coin: coin, amount: 0)
     }
     
     private var columnTitles: some View {
