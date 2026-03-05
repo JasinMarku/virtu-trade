@@ -5,4 +5,4 @@ title: VirtuTrade
 
 # VirtuTrade
 
-- [Privacy Policy](privacy-policy)
+- [Privacy Policy](privacy-policymd)
