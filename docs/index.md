@@ -5,4 +5,4 @@ title: VirtuTrade
 
 # VirtuTrade
 
-- [Privacy Policy](privacy-policy.md)
+- [Privacy Policy]({{ site.baseurl }}/privacy-policy/)
