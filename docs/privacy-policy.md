@@ -1,3 +1,8 @@
+---
+layout: default
+title: Privacy Policy
+---
+
 # Privacy Policy
 
 **Last updated:** March 4, 2026
@@ -73,4 +78,3 @@ If you have questions about this Privacy Policy, please contact:
 
 - **VirtuTrade Support**
 - **Email:** jasin528@yahoo.com
-
