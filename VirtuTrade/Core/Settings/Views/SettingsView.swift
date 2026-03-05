@@ -197,20 +197,13 @@ extension SettingsView {
                 VStack(spacing: 0) {
                     if let linkedInURL {
                         Link(destination: linkedInURL) {
-                            aboutLinkRow(title: "LinkedIn", iconName: "linkedin")
+                            aboutLinkRow(title: "Connect", iconName: "linkedin")
                         }
                         .buttonStyle(.plain)
                     }
                     
                     if linkedInURL != nil, githubURL != nil || coinGeckoURL != nil {
                         cardDivider
-                    }
-                    
-                    if let githubURL {
-                        Link(destination: githubURL) {
-                            aboutLinkRow(title: "GitHub", iconName: "github")
-                        }
-                        .buttonStyle(.plain)
                     }
                     
                     if githubURL != nil, coinGeckoURL != nil {
