@@ -10,6 +10,7 @@ import Combine
 
 struct AccountSnapshot: Identifiable, Codable, Equatable {
     let timestamp: Date
+    // Keeps the persisted key stable while storing the full simulated account value: holdings + cash.
     let totalPortfolioValue: Double
     
     var id: String {
@@ -81,6 +82,7 @@ final class HomeViewModel: ObservableObject {
         static let startingCashBalance: Double = 100_000
     }
     
+    private let minimumValidPerformanceBaseline: Double = 0.01
     private let holdingEpsilon: Double = 0.00000001
     private let tradeComparisonEpsilon: Double = 0.000000001
     
@@ -218,10 +220,41 @@ final class HomeViewModel: ObservableObject {
         portfolioDataService.removeAllPortfolio()
     }
     
-    func clearPortfolioStateImmediately() {
+    func clearPortfolioStateImmediately(resetAccountSnapshots: Bool = false) {
         portfolioCoins = []
         searchText = ""
+        
+        if resetAccountSnapshots {
+            accountSnapshots = []
+            AccountSnapshotStore.save(accountSnapshots)
+        }
+        
         appendAccountSnapshotIfNeeded(force: true)
+    }
+
+    func todayAccountChangeSummary(
+        asOf date: Date = Date(),
+        calendar: Calendar = .autoupdatingCurrent
+    ) -> (value: Double, percentage: Double) {
+        let currentValue = totalAccountValue
+        guard currentValue.isFinite, currentValue >= 0 else {
+            return (0, 0)
+        }
+        
+        guard let baselineValue = todayBaselineAccountValue(asOf: date, calendar: calendar) else {
+            return (0, 0)
+        }
+        
+        let changeValue = currentValue - baselineValue
+        let changePercentage: Double
+        if baselineValue > minimumValidPerformanceBaseline {
+            let rawPercentage = (changeValue / baselineValue) * 100
+            changePercentage = rawPercentage.isFinite ? rawPercentage : 0
+        } else {
+            changePercentage = 0
+        }
+        
+        return (changeValue, changePercentage)
     }
     
     func reloadData() {
@@ -410,6 +443,41 @@ final class HomeViewModel: ObservableObject {
     
     private var totalAccountValue: Double {
         portfolioHoldingsValue + cashBalance
+    }
+
+    private func todayBaselineAccountValue(
+        asOf date: Date,
+        calendar: Calendar
+    ) -> Double? {
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        if let midnightBaseline = lastValidAccountSnapshot(where: { $0.timestamp <= startOfDay }) {
+            return midnightBaseline.totalPortfolioValue
+        }
+        
+        // If the user started trading today or a session was reset today, anchor "Today"
+        // to the earliest valid full-account snapshot captured after local midnight.
+        if let firstSnapshotToday = firstValidAccountSnapshot(where: { $0.timestamp >= startOfDay && $0.timestamp <= date }) {
+            return firstSnapshotToday.totalPortfolioValue
+        }
+        
+        return nil
+    }
+
+    private func isValidPerformanceBaseline(_ value: Double) -> Bool {
+        value.isFinite && value > minimumValidPerformanceBaseline
+    }
+    
+    private func firstValidAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
+        accountSnapshots.first { snapshot in
+            predicate(snapshot) && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+        }
+    }
+    
+    private func lastValidAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
+        accountSnapshots.last { snapshot in
+            predicate(snapshot) && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+        }
     }
     
     private func appendAccountSnapshotIfNeeded(force: Bool = false) {

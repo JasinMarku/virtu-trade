@@ -167,6 +167,16 @@ extension SettingsView {
                 ) {
                     showResetConfirmation = true
                 }
+                
+                cardDivider
+                
+                Text("VirtuTrade is a simulation and does not support real cryptocurrency trading, wallets, deposits, or withdrawals.")
+                    .font(.caption)
+                    .foregroundStyle(Color.theme.secondaryText)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
             }
         }
     }
@@ -304,10 +314,10 @@ extension SettingsView {
     }
     
     private func resetSandbox(to cashBalance: Double) {
-        vm.resetPortfolio()
-        vm.clearPortfolioStateImmediately()
-        tradeHistoryStore.clearTrades()
         simulatedCashBalance = cashBalance
+        vm.resetPortfolio()
+        tradeHistoryStore.clearTrades()
+        vm.clearPortfolioStateImmediately(resetAccountSnapshots: true)
     }
 
     private func aboutLinkRow(title: String, iconName: String, iconIsTemplate: Bool = true) -> some View {

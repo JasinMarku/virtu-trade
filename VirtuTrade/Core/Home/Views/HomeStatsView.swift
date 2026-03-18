@@ -21,6 +21,7 @@ struct PortfolioValueHeaderView: View {
     let dayChangePercentage: Double?
     let allTimeChangeValue: Double?
     let allTimeChangePercentage: Double?
+    let valueFontSize: CGFloat
 
     init(
         portfolioValue: Double,
@@ -29,7 +30,8 @@ struct PortfolioValueHeaderView: View {
         dayChangeValue: Double? = nil,
         dayChangePercentage: Double? = nil,
         allTimeChangeValue: Double? = nil,
-        allTimeChangePercentage: Double? = nil
+        allTimeChangePercentage: Double? = nil,
+        valueFontSize: CGFloat = 30
     ) {
         self.portfolioValue = portfolioValue
         self.accountBalance = accountBalance
@@ -38,6 +40,7 @@ struct PortfolioValueHeaderView: View {
         self.dayChangePercentage = dayChangePercentage
         self.allTimeChangeValue = allTimeChangeValue
         self.allTimeChangePercentage = allTimeChangePercentage
+        self.valueFontSize = valueFontSize
     }
     
     var body: some View {
@@ -50,7 +53,7 @@ struct PortfolioValueHeaderView: View {
 
             
             Text(portfolioValue.asCurrencyWith2Decimals())
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: valueFontSize, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(Color.primary)
@@ -103,7 +106,9 @@ struct PortfolioValueHeaderView: View {
     }
     
     private func performanceTrend(value: Double, percentage: Double) -> PerformanceTrend {
-        if abs(value) < 0.005, abs(percentage) < 0.005 {
+        let safePercentage = sanitizedPercentage(percentage)
+        
+        if abs(value) < 0.005, abs(safePercentage) < 0.005 {
             return .neutral
         }
         
@@ -133,6 +138,7 @@ struct PortfolioValueHeaderView: View {
     }
     
     private func formattedPerformanceText(value: Double, percentage: Double, trend: PerformanceTrend) -> String {
+        let safePercentage = sanitizedPercentage(percentage)
         let sign: String
         switch trend {
         case .positive:
@@ -144,8 +150,16 @@ struct PortfolioValueHeaderView: View {
         }
         
         let dollars = abs(value).asCurrencyWith2Decimals()
-        let percent = abs(percentage).asNumberString()
+        let percent = abs(safePercentage).asNumberString()
         return "\(sign)\(dollars) (\(sign)\(percent)%)"
+    }
+    
+    private func sanitizedPercentage(_ percentage: Double) -> Double {
+        guard percentage.isFinite, abs(percentage) <= 999_999.99 else {
+            return 0
+        }
+        
+        return percentage
     }
 }
 

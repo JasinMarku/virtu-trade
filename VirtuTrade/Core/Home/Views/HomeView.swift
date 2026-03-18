@@ -192,37 +192,8 @@ extension HomeView {
         }
     }
 
-    private var portfolioInvestedValue: Double {
-        vm.portfolioCoins.reduce(0) { partialResult, coin in
-            let holdings = coin.currentHoldings ?? 0
-            let currentPrice = coin.currentPrice
-
-            guard holdings.isFinite,
-                  currentPrice.isFinite,
-                  holdings >= 0,
-                  currentPrice >= 0 else {
-                return partialResult
-            }
-            
-            let position = tradeHistoryStore.position(for: coin.id)
-            let averageCost = position.averageCost
-            
-            // Keep the metric stable for older holdings that may not have trade history cost basis.
-            guard averageCost.isFinite, averageCost > 0 else {
-                return partialResult + (holdings * currentPrice)
-            }
-            
-            return partialResult + (holdings * averageCost)
-        }
-    }
-    
-    private var portfolioTodayChangeValue: Double {
-        portfolioHoldingsValue - portfolioInvestedValue
-    }
-
-    private var portfolioTodayChangePercentage: Double {
-        guard portfolioInvestedValue > 0 else { return 0 }
-        return (portfolioTodayChangeValue / portfolioInvestedValue) * 100
+    private var todayAccountPerformance: (value: Double, percentage: Double) {
+        vm.todayAccountChangeSummary()
     }
     
     private var totalAccountBalance: Double {
@@ -258,10 +229,11 @@ extension HomeView {
             portfolioValue: portfolioHoldingsValue,
             accountBalance: totalAccountBalance,
             availableCash: simulatedCashBalance,
-            dayChangeValue: portfolioTodayChangeValue,
-            dayChangePercentage: portfolioTodayChangePercentage,
+            dayChangeValue: todayAccountPerformance.value,
+            dayChangePercentage: todayAccountPerformance.percentage,
             allTimeChangeValue: accountAllTimeChangeValue,
-            allTimeChangePercentage: accountAllTimeChangePercentage
+            allTimeChangePercentage: accountAllTimeChangePercentage,
+            valueFontSize: showPortfolio ? 30 : 34
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)

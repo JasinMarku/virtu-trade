@@ -77,6 +77,10 @@ struct TradeOverlayPanelContent: View {
                     Text("Real market prices. Simulated trades.")
                         .font(.caption)
                         .foregroundStyle(Color.theme.secondaryText)
+                    Text("Simulated trade only. No real transaction occurs.")
+                        .font(.caption2)
+                        .foregroundStyle(Color.theme.secondaryText.opacity(0.88))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.vertical, 10)
                 

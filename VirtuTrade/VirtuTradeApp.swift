@@ -456,7 +456,7 @@ private extension TradingProfileFlowView {
                     .minimumScaleFactor(0.65)
             }
             
-            Text("Practice real crypto trading with virtual USD. Real market prices. Simulated trades.")
+            Text("Track real market prices and practice simulated trades with virtual USD.")
                 .font(.title3)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(OnboardingPalette.textSecondary)
@@ -470,7 +470,7 @@ private extension TradingProfileFlowView {
             }
             .buttonStyle(PrimaryButtonStyle())
             
-            Text("VirtuTrade is a simulated trading environment using virtual USD. No real cryptocurrencies are bought or sold.")
+            Text("This is a simulated trading environment using virtual USD. No real cryptocurrency is bought, sold, or stored.")
                 .font(.caption2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(OnboardingPalette.textMuted)
@@ -506,12 +506,12 @@ private extension TradingProfileFlowView {
                 }
             }
             
-            Text("Who do you want to invest as?")
+            Text("Choose your simulated trading profile.")
                 .font(.system(size: 42, weight: .bold, design: .rounded))
                 .foregroundStyle(OnboardingPalette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             
-            Text("Choose your starting profile. Your balance will match real-life scenarios.")
+            Text("Choose a starting profile. Your virtual USD balance can mirror real-life scenarios.")
                 .font(.title3)
                 .foregroundStyle(OnboardingPalette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -669,13 +669,13 @@ private extension TradingProfileFlowView {
                 .foregroundStyle(Color.theme.green)
                 .shadow(color: Color.theme.green.opacity(0.28), radius: 16, x: 0, y: 8)
             
-            Text("You're ready to trade")
+            Text("You're ready to simulate")
                 .font(.system(size: 46, weight: .bold, design: .rounded))
                 .foregroundStyle(OnboardingPalette.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             
             if let confirmationProfile, let startingBalance = confirmationProfile.startingBalance {
-                Text("You're trading as the \(confirmationProfile.title) profile with \(startingBalance.asCurrencyWith2Decimals()) in virtual USD.")
+                Text("You're using the \(confirmationProfile.title) profile with \(startingBalance.asCurrencyWith2Decimals()) in virtual USD.")
                     .font(.title3)
                     .foregroundStyle(OnboardingPalette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -690,7 +690,7 @@ private extension TradingProfileFlowView {
             Spacer(minLength: 16)
             
             Button(action: completeFlow) {
-                Text(mode == .onboarding ? "Launch Trading →" : "Switch Profile →")
+                Text(mode == .onboarding ? "Launch Simulator →" : "Switch Profile →")
             }
             .buttonStyle(PrimaryButtonStyle(isDisabled: confirmationProfile == nil))
             .disabled(confirmationProfile == nil)
@@ -822,6 +822,7 @@ struct VirtuTradeApp: App {
                         let resolvedBalance = TradingSession.applyProfile(selectedProfile, markOnboardingComplete: true)
                         profileID = selectedProfile.id
                         simCashBalance = resolvedBalance
+                        vm.clearPortfolioStateImmediately(resetAccountSnapshots: true)
                         hasCompletedOnboarding = true
                     }
                 }
