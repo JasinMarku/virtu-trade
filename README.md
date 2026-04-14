@@ -8,8 +8,7 @@ Real market prices. Simulated trades.
 ## 🎥 Demo
 
 
-
-https://github.com/user-attachments/assets/39df963f-75a2-484d-ae11-6712a025a70c
+https://github.com/user-attachments/assets/c55bf662-49e3-4efb-a098-2b3e4c928e89
 
 
 ## About the App
