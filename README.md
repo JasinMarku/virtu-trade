@@ -56,7 +56,7 @@ VirtuTrade is a simulated trading product.
 
 ## App Store
 
-[Download on the App Store](APP_STORE_LINK)
+Awaiting Final Review for public launch.
 
 ## Credits
 
