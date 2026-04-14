@@ -5,58 +5,66 @@ Real market prices. Simulated trades.
 ## App Preview
 ![EA513120-8FBD-474C-ADD8-E1B919D0712D_1_102_a](https://github.com/user-attachments/assets/2e538bbf-cbd6-4a8e-b488-6d1cfd93f91e)
 
+## 🎥 Demo
+
+https://github.com/user-attachments/assets/226bb195-989c-4801-a9ea-53dc78eb1d82
 
 ## About the App
 
 VirtuTrade is a native iOS crypto trading simulator designed for realistic market practice without real-money risk. The app streams live market pricing and pairs it with a local simulation engine so users can learn trading behavior, portfolio dynamics, and execution discipline in a controlled environment.
 
-Built as a product-first experience, VirtuTrade focuses on clarity, responsiveness, and confidence at every step of the journey, from onboarding and discovery to trade execution and portfolio tracking.
+The goal was to build a fast, clean, and reliable trading experience that feels real without involving actual financial risk.
 
 ## Key Features
 
-- Simulated buy/sell execution using virtual USD
-- Live crypto market browsing with search and sorting views
+- Simulated buy and sell execution using virtual USD
+- Live crypto market browsing with search and sorting
 - Portfolio tracking with holdings, value, and performance metrics
-- Trade flows designed for speed, feedback, and usability
-- Interactive market charts and value visualization
-- Crypto news feed integrated into the app experience
+- Fast, responsive trade flows with clear feedback
+- Interactive charts and market visualization
 - Trading profiles with configurable starting balances
-- Persistent local state for portfolio, history, and preferences
+- Persistent local state for portfolio, trade history, and preferences
 
-## Design Philosophy
+## Architecture Overview
 
-VirtuTrade is intentionally minimal and information-forward.
-
-- Clear hierarchy: essential information is visible first, secondary context follows
-- Responsive interactions: fast state updates and smooth transitions
-- Practical realism: simulation behavior mirrors real decision pressure without financial exposure
-- Polished states: loading, empty, and error states are handled with the same care as happy paths
-- Visual consistency: cohesive spacing, typography, and controls across Home, Portfolio, Trade, and Settings
+- Built using SwiftUI with an MVVM architecture
+- Combine pipelines used for reactive data flow and UI updates
+- Market data fetched from the CoinGecko API using URLSession
+- Core Data used for local persistence of portfolio and trade history
+- Local simulation engine handles trade execution and account value updates
+- Structured loading, error, and retry states for reliability
 
 ## Engineering Highlights
 
-- SwiftUI-first architecture optimized for maintainable, state-driven UI
-- Combine-powered reactive pipelines for synchronized market and portfolio updates
-- Core Data-backed persistence for holdings and portfolio state durability
-- URLSession networking with structured decoding, error propagation, and safe request handling
-- CoinGecko-backed live market data integration
-- Asynchronous data flow designed to keep UI updates smooth and predictable
-- Local simulation engine for trade execution and account value updates
-- Reliability-focused implementation with explicit UI states and defensive data handling
+- State-driven UI for predictable and maintainable updates
+- Asynchronous networking with structured decoding
+- Clear separation between UI, business logic, and persistence
+- Defensive data handling to prevent crashes and inconsistent balances
+- Local-first simulation design with no backend dependency
+
+## Design Philosophy
+
+VirtuTrade is intentionally minimal and information-first.
+
+- Clear hierarchy: important information appears first
+- Fast interactions: low-friction flows with immediate feedback
+- Realistic simulation: designed to mirror trading decision pressure without financial exposure
+- Polished states: loading, empty, and error states handled intentionally
+- Consistent UI: spacing, typography, and controls remain cohesive across the app
 
 ## Privacy
 
-VirtuTrade is a simulated trading product.
+VirtuTrade is a fully simulated trading environment.
 
-- Trades are simulated locally using virtual USD
-- No real cryptocurrency purchases, deposits, withdrawals, or custody
-- No brokerage or exchange execution
+- No real cryptocurrency transactions
+- No deposits, withdrawals, or wallet connections
+- No brokerage or exchange integration
 - No personal financial account linking
-- Uses public market/news data APIs for pricing and content
+- Uses public APIs for market and content data only
+  
+## Status
 
-## App Store
-
-Awaiting Final Review for public launch.
+App Store submission in progress.
 
 ## Credits
 
