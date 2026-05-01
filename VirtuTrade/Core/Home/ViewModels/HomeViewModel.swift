@@ -12,7 +12,12 @@ struct AccountSnapshot: Identifiable, Codable, Equatable {
     let timestamp: Date
     // Keeps the persisted key stable while storing the full simulated account value: holdings + cash.
     let totalPortfolioValue: Double
-    
+    // Legacy snapshots from older builds may not include this flag.
+    // New snapshots are only recorded once holdings and prices are hydrated.
+    let isHydrated: Bool?
+    // Version 2 snapshots are gated by mapped portfolio holdings, not just raw market data.
+    let schemaVersion: Int?
+
     var id: String {
         "\(timestamp.timeIntervalSince1970)-\(totalPortfolioValue)"
     }
@@ -21,19 +26,19 @@ struct AccountSnapshot: Identifiable, Codable, Equatable {
 private enum AccountSnapshotStore {
     private static let snapshotsKey = "vt_account_snapshots"
     private static let maxSnapshotCount = 2_000
-    
+
     static func load(defaults: UserDefaults = .standard) -> [AccountSnapshot] {
         guard let data = defaults.data(forKey: snapshotsKey) else {
             return []
         }
-        
+
         guard let decoded = try? JSONDecoder().decode([AccountSnapshot].self, from: data) else {
             return []
         }
-        
+
         return decoded.sorted { $0.timestamp < $1.timestamp }
     }
-    
+
     static func save(_ snapshots: [AccountSnapshot], defaults: UserDefaults = .standard) {
         let trimmedSnapshots = Array(snapshots.suffix(maxSnapshotCount))
         guard let data = try? JSONEncoder().encode(trimmedSnapshots) else { return }
@@ -43,20 +48,27 @@ private enum AccountSnapshotStore {
 
 @MainActor
 final class HomeViewModel: ObservableObject {
+    struct AccountValueSummary {
+        let cashBalance: Double
+        let holdingsValue: Double
+        let totalValue: Double
+        let isTrusted: Bool
+    }
+
     struct TradeExecutionResult {
         let updatedCashBalance: Double
         let updatedHoldings: Double
         let totalValue: Double
         let executionPrice: Double
     }
-    
+
     enum TradeExecutionError: LocalizedError {
         case invalidQuantity
         case invalidPrice
         case insufficientCash
         case noHoldings
         case insufficientHoldings
-        
+
         var userMessage: String {
             switch self {
             case .invalidQuantity:
@@ -71,21 +83,25 @@ final class HomeViewModel: ObservableObject {
                 return "Insufficient holdings for this sell."
             }
         }
-        
+
         var errorDescription: String? {
             userMessage
         }
     }
-    
+
     private enum SimulationDefaults {
         static let cashBalanceKey = "vt_sim_cash_balance"
         static let startingCashBalance: Double = 100_000
     }
-    
+
+    private enum AccountSnapshotSchema {
+        static let trustedVersion = 2
+    }
+
     private let minimumValidPerformanceBaseline: Double = 0.01
     private let holdingEpsilon: Double = 0.00000001
     private let tradeComparisonEpsilon: Double = 0.000000001
-    
+
     @Published var statistics: [StatisticModel] = []      // Stores key statistics (like market cap, volume) for display
     @Published var allCoins: [CoinModel] = []             // List of all available coins from the API
     @Published var allCoinsUnfiltered: [CoinModel] = []   // Source coin list before search filtering
@@ -94,29 +110,29 @@ final class HomeViewModel: ObservableObject {
     @Published var searchText: String = ""                // Holds text entered by the user for coin search
     @Published var sortOption: SortOption = .holdings
     @Published private(set) var accountSnapshots: [AccountSnapshot]
-    
+
     private let coinDataService = CoinDataService()       // Service to fetch all coin data
     private let marketDataService = MarketDataService()   // Service to fetch market data
     private let portfolioDataService = PortfolioDataService() // Service for managing the portfolio's data storage
     private var cancellables = Set<AnyCancellable>()      // Holds cancellable objects for Combine subscriptions
-    
+
     enum SortOption {
         case rank, rankReversed, holdings, holdingsReversed, price, priceReversed
     }
-    
+
     init() {
         accountSnapshots = AccountSnapshotStore.load()
         addSubscribers()
         appendAccountSnapshotIfNeeded(force: true)
     }
-    
+
     private func addSubscribers() {
         coinDataService.$allCoins
             .sink { [weak self] coins in
                 self?.allCoinsUnfiltered = coins
             }
             .store(in: &cancellables)
-        
+
         // Updates allCoins based on search text and API data
         $searchText
             .combineLatest(coinDataService.$allCoins, $sortOption)     // Combines searchText with allCoins from the API
@@ -126,7 +142,7 @@ final class HomeViewModel: ObservableObject {
                 self?.allCoins = returnedCoins            // Updates allCoins with filtered result
             }
             .store(in: &cancellables)
-        
+
         // Updates portfolio coins list with relevant coin data from allCoins and portfolio entities
         $allCoins
             .combineLatest(portfolioDataService.$savedEntities) // Combines allCoins with saved portfolio entities
@@ -136,7 +152,22 @@ final class HomeViewModel: ObservableObject {
                 self.portfolioCoins = self.sortPortfolioCoinsIfNeeded(coins: returnedCoins) // Updates portfolioCoins with filtered coins in the portfolio
             }
             .store(in: &cancellables)
-        
+
+        // Seed account snapshots only after the persisted portfolio has loaded and,
+        // when needed, saved holdings have been mapped into priced portfolio coins.
+        portfolioDataService.$savedEntities
+            .combineLatest($portfolioCoins, portfolioDataService.$hasLoadedInitialPortfolio)
+            .sink { [weak self] savedEntities, portfolioCoins, hasLoadedInitialPortfolio in
+                guard let self else { return }
+                let accountValue = self.trustedAccountValueSummary(
+                    savedEntities: savedEntities,
+                    portfolioCoins: portfolioCoins,
+                    hasLoadedInitialPortfolio: hasLoadedInitialPortfolio
+                )
+                self.appendAccountSnapshotIfNeeded(accountValue: accountValue)
+            }
+            .store(in: &cancellables)
+
         // Updates global market data and portfolio statistics
         marketDataService.$marketData
             .combineLatest($portfolioCoins)              // Combines market data with portfolio coins
@@ -148,20 +179,20 @@ final class HomeViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
-    
+
     func updatePortfolio(coin: CoinModel, amount: Double) {
         // Updates portfolio with the new coin amount, then saves the data
         portfolioDataService.updatePortfolio(coin: coin, amount: amount)
     }
-    
+
     func tradeValidationMessage(coin: CoinModel, type: TradeType, quantity: Double) -> String? {
         validationError(coin: coin, type: type, quantity: quantity)?.userMessage
     }
-    
+
     func availableHoldings(for coinID: String) -> Double {
         currentHoldings(for: coinID)
     }
-    
+
     @discardableResult
     func executeTrade(
         coin: CoinModel,
@@ -172,13 +203,13 @@ final class HomeViewModel: ObservableObject {
         if let validationError = validationError(coin: coin, type: type, quantity: quantity) {
             return .failure(validationError)
         }
-        
+
         let executionPrice = coin.currentPrice
         let totalValue = quantity * executionPrice
-        
+
         let updatedHoldings: Double
         let updatedCashBalance: Double
-        
+
         switch type {
         case .buy:
             updatedHoldings = availableHoldings(for: coin.id) + quantity
@@ -187,11 +218,11 @@ final class HomeViewModel: ObservableObject {
             updatedHoldings = max(availableHoldings(for: coin.id) - quantity, 0)
             updatedCashBalance = cashBalance + totalValue
         }
-        
+
         let normalizedHoldings = abs(updatedHoldings) < holdingEpsilon ? 0 : updatedHoldings
         cashBalance = updatedCashBalance
         updatePortfolio(coin: coin, amount: normalizedHoldings)
-        
+
         let trade = TradeModel(
             id: UUID(),
             coinID: coin.id,
@@ -205,7 +236,7 @@ final class HomeViewModel: ObservableObject {
         )
         tradeHistoryStore.addTrade(trade: trade)
         appendAccountSnapshotIfNeeded()
-        
+
         return .success(
             TradeExecutionResult(
                 updatedCashBalance: updatedCashBalance,
@@ -215,20 +246,44 @@ final class HomeViewModel: ObservableObject {
             )
         )
     }
-    
+
+    var accountValueSummary: AccountValueSummary {
+        trustedAccountValueSummary()
+    }
+
+    var lastTrustedAccountValueForDisplay: Double? {
+        accountSnapshots.last(where: isTrustedSnapshot)?.totalPortfolioValue
+    }
+
+    func allTimeAccountChangeSummary(startingBalance: Double) -> (value: Double, percentage: Double) {
+        let accountValue = accountValueSummary
+        guard accountValue.isTrusted,
+              accountValue.totalValue.isFinite,
+              accountValue.totalValue >= 0,
+              startingBalance > minimumValidPerformanceBaseline else {
+            return (0, 0)
+        }
+
+        let changeValue = accountValue.totalValue - startingBalance
+        let rawPercentage = (changeValue / startingBalance) * 100
+        let changePercentage = rawPercentage.isFinite ? rawPercentage : 0
+
+        return (changeValue, changePercentage)
+    }
+
     func resetPortfolio() {
         portfolioDataService.removeAllPortfolio()
     }
-    
+
     func clearPortfolioStateImmediately(resetAccountSnapshots: Bool = false) {
         portfolioCoins = []
         searchText = ""
-        
+
         if resetAccountSnapshots {
             accountSnapshots = []
             AccountSnapshotStore.save(accountSnapshots)
         }
-        
+
         appendAccountSnapshotIfNeeded(force: true)
     }
 
@@ -236,16 +291,18 @@ final class HomeViewModel: ObservableObject {
         asOf date: Date = Date(),
         calendar: Calendar = .autoupdatingCurrent
     ) -> (value: Double, percentage: Double) {
-        let currentValue = totalAccountValue
-        guard currentValue.isFinite, currentValue >= 0 else {
+        let accountValue = accountValueSummary
+        guard accountValue.isTrusted,
+              accountValue.totalValue.isFinite,
+              accountValue.totalValue >= 0 else {
             return (0, 0)
         }
-        
+
         guard let baselineValue = todayBaselineAccountValue(asOf: date, calendar: calendar) else {
             return (0, 0)
         }
-        
-        let changeValue = currentValue - baselineValue
+
+        let changeValue = accountValue.totalValue - baselineValue
         let changePercentage: Double
         if baselineValue > minimumValidPerformanceBaseline {
             let rawPercentage = (changeValue / baselineValue) * 100
@@ -253,23 +310,23 @@ final class HomeViewModel: ObservableObject {
         } else {
             changePercentage = 0
         }
-        
+
         return (changeValue, changePercentage)
     }
-    
+
     func reloadData() {
         // Triggers data reload from API services
         isLoading = true                                 // Sets loading state to true during fetch
         coinDataService.getCoins()                       // Fetches updated coin data
         marketDataService.getData()                      // Fetches updated market data
     }
-    
+
     private func filterAndSortCoins(text: String, coins: [CoinModel], sort: SortOption) -> [CoinModel] {
         var updatedCoins = filterCoins(text: text, coins: coins)
         sortCoins(sort: sort, coins: &updatedCoins)
         return updatedCoins
     }
-    
+
     // Filters the list of all coins based on search text
     private func filterCoins(text: String, coins: [CoinModel]) -> [CoinModel] {
         guard !text.isEmpty else {
@@ -282,7 +339,7 @@ final class HomeViewModel: ObservableObject {
             coin.id.lowercased().contains(lowercaseText)
         }
     }
-    
+
     private func sortCoins(sort: SortOption, coins: inout [CoinModel]) {
         switch sort {
         case .rank, .holdings:
@@ -295,7 +352,7 @@ final class HomeViewModel: ObservableObject {
             coins.sort(by: { $0.currentPrice > $1.currentPrice })
         }
     }
-    
+
     private func sortPortfolioCoinsIfNeeded(coins: [CoinModel]) -> [CoinModel] {
         // will only sort by holdings or reversedHoldings if needed
         switch sortOption {
@@ -307,7 +364,7 @@ final class HomeViewModel: ObservableObject {
             return coins
         }
     }
-    
+
     // Maps all coins to those held in the portfolio, updating their holdings
     private func mapAllCoinsToPortfolioCoins(allCoins: [CoinModel], portfolioEntities: [PortfolioEntity]) -> [CoinModel] {
         allCoins
@@ -318,15 +375,15 @@ final class HomeViewModel: ObservableObject {
                 return coin.updateHoldings(amount: entity.amount) // Updates coin with its portfolio holdings
             }
     }
-    
+
     // Maps global market data and portfolio statistics into a list of StatisticModels
     private func mapGlobalMarketData(marketDataModel: MarketDataModel?, portfolioCoins: [CoinModel]) -> [StatisticModel] {
         var stats: [StatisticModel] = []
-        
+
         guard let data = marketDataModel else {
             return stats                                 // Returns empty stats if market data is unavailable
         }
-        
+
         // Creates key market statistics for display
         let marketCap = StatisticModel(title: "Market Cap", value: data.marketCap, percentageChange: data.marketCapChangePercentage24HUsd)
         let volume = StatisticModel(title: "24h Volume", value: data.volume)
@@ -337,13 +394,13 @@ final class HomeViewModel: ObservableObject {
             percentageChange: data.marketCapChangePercentage24HUsd
         )
         let markets = StatisticModel(title: "Markets", value: data.marketsString)
-        
+
         // Calculates the portfolio's total current value
         let portfolioValue =
             portfolioCoins
             .map({ $0.currentHoldingsValue })            // Sums the value of each coin in the portfolio
             .reduce(0, +)
-        
+
         // Calculates the portfolio's total value 24 hours ago
         let previousValue =
             portfolioCoins
@@ -354,11 +411,11 @@ final class HomeViewModel: ObservableObject {
                     return currentValue
                 }
                 let previousValue = currentValue / (1 + percentChange)
-                
+
                 return previousValue                     // Approximate value of each coin 24 hours ago
             }
             .reduce(0, +)
-        
+
         // Calculates 24-hour percentage change in portfolio value
         let percentageChange: Double
         if previousValue > 0 {
@@ -366,13 +423,13 @@ final class HomeViewModel: ObservableObject {
         } else {
             percentageChange = 0
         }
-        
+
         // Creates portfolio statistic
         let portfolio = StatisticModel(
             title: "Portfolio Value",
             value: portfolioValue.asCurrencyWith2Decimals(),
             percentageChange: percentageChange)
-        
+
         // Adds market and portfolio statistics to the stats array
         stats.append(contentsOf: [marketCap, volume, btcDominance, marketCap24H])
         if !data.marketsString.isEmpty {
@@ -381,7 +438,7 @@ final class HomeViewModel: ObservableObject {
         stats.append(portfolio)
         return stats
     }
-    
+
     private var cashBalance: Double {
         get {
             let defaults = UserDefaults.standard
@@ -394,28 +451,28 @@ final class HomeViewModel: ObservableObject {
             UserDefaults.standard.set(newValue, forKey: SimulationDefaults.cashBalanceKey)
         }
     }
-    
+
     private func currentHoldings(for coinID: String) -> Double {
         let holdings = portfolioCoins.first(where: { $0.id == coinID })?.currentHoldings ?? 0
         guard holdings.isFinite, holdings >= 0 else { return 0 }
         return holdings
     }
-    
+
     private func validationError(coin: CoinModel, type: TradeType, quantity: Double) -> TradeExecutionError? {
         guard quantity.isFinite, quantity > 0 else {
             return .invalidQuantity
         }
-        
+
         let executionPrice = coin.currentPrice
         guard executionPrice.isFinite, executionPrice > 0 else {
             return .invalidPrice
         }
-        
+
         let totalValue = quantity * executionPrice
         guard totalValue.isFinite, totalValue > 0 else {
             return .invalidQuantity
         }
-        
+
         switch type {
         case .buy:
             guard cashBalance + tradeComparisonEpsilon >= totalValue else {
@@ -430,19 +487,77 @@ final class HomeViewModel: ObservableObject {
                 return .insufficientHoldings
             }
         }
-        
+
         return nil
     }
-    
-    private var portfolioHoldingsValue: Double {
-        portfolioCoins
-            .map(\.currentHoldingsValue)
-            .filter { $0.isFinite && $0 >= 0 }
-            .reduce(0, +)
+
+    private var savedPortfolioHoldings: [(coinID: String, amount: Double)] {
+        savedPortfolioHoldings(from: portfolioDataService.savedEntities)
     }
-    
-    private var totalAccountValue: Double {
-        portfolioHoldingsValue + cashBalance
+
+    private func savedPortfolioHoldings(from savedEntities: [PortfolioEntity]) -> [(coinID: String, amount: Double)] {
+        savedEntities.compactMap { entity in
+            guard let coinID = entity.coinID?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !coinID.isEmpty else {
+                return nil
+            }
+
+            let amount = entity.amount
+            guard amount.isFinite, amount > holdingEpsilon else {
+                return nil
+            }
+
+            return (coinID, amount)
+        }
+    }
+
+    private func trustedAccountValueSummary() -> AccountValueSummary {
+        trustedAccountValueSummary(
+            savedEntities: portfolioDataService.savedEntities,
+            portfolioCoins: portfolioCoins,
+            hasLoadedInitialPortfolio: portfolioDataService.hasLoadedInitialPortfolio
+        )
+    }
+
+    private func trustedAccountValueSummary(
+        savedEntities: [PortfolioEntity],
+        portfolioCoins: [CoinModel],
+        hasLoadedInitialPortfolio: Bool
+    ) -> AccountValueSummary {
+        let cash = cashBalance
+        guard cash.isFinite, cash >= 0 else {
+            return AccountValueSummary(cashBalance: 0, holdingsValue: 0, totalValue: 0, isTrusted: false)
+        }
+
+        guard hasLoadedInitialPortfolio else {
+            return AccountValueSummary(cashBalance: cash, holdingsValue: 0, totalValue: cash, isTrusted: false)
+        }
+
+        let savedHoldings = savedPortfolioHoldings(from: savedEntities)
+        guard !savedHoldings.isEmpty else {
+            return AccountValueSummary(cashBalance: cash, holdingsValue: 0, totalValue: cash, isTrusted: true)
+        }
+
+        var holdingsValue: Double = 0
+        for holding in savedHoldings {
+            guard let coin = portfolioCoins.first(where: { $0.id == holding.coinID }),
+                  let mappedHoldings = coin.currentHoldings,
+                  mappedHoldings.isFinite,
+                  abs(mappedHoldings - holding.amount) <= max(holdingEpsilon, holding.amount * 0.000000001),
+                  coin.currentPrice.isFinite,
+                  coin.currentPrice > 0 else {
+                return AccountValueSummary(cashBalance: cash, holdingsValue: 0, totalValue: cash, isTrusted: false)
+            }
+
+            let value = holding.amount * coin.currentPrice
+            guard value.isFinite, value >= 0 else {
+                return AccountValueSummary(cashBalance: cash, holdingsValue: 0, totalValue: cash, isTrusted: false)
+            }
+
+            holdingsValue += value
+        }
+
+        return AccountValueSummary(cashBalance: cash, holdingsValue: holdingsValue, totalValue: cash + holdingsValue, isTrusted: true)
     }
 
     private func todayBaselineAccountValue(
@@ -450,52 +565,82 @@ final class HomeViewModel: ObservableObject {
         calendar: Calendar
     ) -> Double? {
         let startOfDay = calendar.startOfDay(for: date)
-        
-        if let midnightBaseline = lastValidAccountSnapshot(where: { $0.timestamp <= startOfDay }) {
+
+        if let midnightBaseline = lastTrustedAccountSnapshot(where: { $0.timestamp <= startOfDay })
+            ?? lastClearlyValidLegacyAccountSnapshot(where: { $0.timestamp <= startOfDay }) {
             return midnightBaseline.totalPortfolioValue
         }
-        
-        // If the user started trading today or a session was reset today, anchor "Today"
-        // to the earliest valid full-account snapshot captured after local midnight.
-        if let firstSnapshotToday = firstValidAccountSnapshot(where: { $0.timestamp >= startOfDay && $0.timestamp <= date }) {
+
+        // Same-day fallback only uses snapshots captured by the stricter account-value gate.
+        if let firstSnapshotToday = firstTrustedAccountSnapshot(where: { $0.timestamp >= startOfDay && $0.timestamp <= date }) {
             return firstSnapshotToday.totalPortfolioValue
         }
-        
+
         return nil
     }
 
     private func isValidPerformanceBaseline(_ value: Double) -> Bool {
         value.isFinite && value > minimumValidPerformanceBaseline
     }
-    
-    private func firstValidAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
+
+    private func isTrustedSnapshot(_ snapshot: AccountSnapshot) -> Bool {
+        snapshot.isHydrated == true
+        && snapshot.schemaVersion == AccountSnapshotSchema.trustedVersion
+        && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+    }
+
+    private func isClearlyValidLegacySnapshot(_ snapshot: AccountSnapshot) -> Bool {
+        let accountValue = accountValueSummary
+        return savedPortfolioHoldings.isEmpty
+        && snapshot.schemaVersion != AccountSnapshotSchema.trustedVersion
+        && accountValue.isTrusted
+        && abs(snapshot.totalPortfolioValue - accountValue.totalValue) <= 0.0001
+        && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+    }
+
+    private func firstTrustedAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
         accountSnapshots.first { snapshot in
-            predicate(snapshot) && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+            predicate(snapshot)
+            && isTrustedSnapshot(snapshot)
         }
     }
-    
-    private func lastValidAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
+
+    private func lastTrustedAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
         accountSnapshots.last { snapshot in
-            predicate(snapshot) && isValidPerformanceBaseline(snapshot.totalPortfolioValue)
+            predicate(snapshot)
+            && isTrustedSnapshot(snapshot)
         }
     }
-    
-    private func appendAccountSnapshotIfNeeded(force: Bool = false) {
-        let currentValue = totalAccountValue
-        guard currentValue.isFinite, currentValue >= 0 else { return }
-        
-        if !force, let lastSnapshot = accountSnapshots.last {
-            let difference = abs(lastSnapshot.totalPortfolioValue - currentValue)
-            guard difference > 0.0001 else { return }
+
+    private func lastClearlyValidLegacyAccountSnapshot(where predicate: (AccountSnapshot) -> Bool) -> AccountSnapshot? {
+        accountSnapshots.last { snapshot in
+            predicate(snapshot)
+            && isClearlyValidLegacySnapshot(snapshot)
         }
-        
+    }
+
+    private func appendAccountSnapshotIfNeeded(force: Bool = false, accountValue: AccountValueSummary? = nil) {
+        let accountValue = accountValue ?? accountValueSummary
+        guard accountValue.isTrusted,
+              accountValue.totalValue.isFinite,
+              accountValue.totalValue >= 0 else {
+            return
+        }
+
+        if !force, let lastSnapshot = accountSnapshots.last {
+            let difference = abs(lastSnapshot.totalPortfolioValue - accountValue.totalValue)
+            guard difference > 0.0001 || !isTrustedSnapshot(lastSnapshot) else { return }
+        }
+
         accountSnapshots.append(
             AccountSnapshot(
                 timestamp: Date(),
-                totalPortfolioValue: currentValue
+                totalPortfolioValue: accountValue.totalValue,
+                isHydrated: true,
+                schemaVersion: AccountSnapshotSchema.trustedVersion
             )
         )
-        
+
         AccountSnapshotStore.save(accountSnapshots)
     }
 }

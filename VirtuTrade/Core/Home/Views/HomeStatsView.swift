@@ -13,7 +13,7 @@ struct PortfolioValueHeaderView: View {
         case negative
         case neutral
     }
-    
+
     let portfolioValue: Double
     let accountBalance: Double?
     let availableCash: Double
@@ -42,23 +42,23 @@ struct PortfolioValueHeaderView: View {
         self.allTimeChangePercentage = allTimeChangePercentage
         self.valueFontSize = valueFontSize
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("PORTFOLIO PERFORMANCE")
+            Text(accountBalance == nil ? "PORTFOLIO PERFORMANCE" : "ACCOUNT PERFORMANCE")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.theme.secondaryText)
                 .padding(.top, 8)
 
-            
-            Text(portfolioValue.asCurrencyWith2Decimals())
+
+            Text((accountBalance ?? portfolioValue).asCurrencyWith2Decimals())
                 .font(.system(size: valueFontSize, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .foregroundStyle(Color.primary)
-            
-            
+
+
             if let dayChangeValue, let dayChangePercentage {
                 performanceLine(
                     value: dayChangeValue,
@@ -66,7 +66,7 @@ struct PortfolioValueHeaderView: View {
                     label: "Today"
                 )
             }
-            
+
             if let allTimeChangeValue, let allTimeChangePercentage {
                 performanceLine(
                     value: allTimeChangeValue,
@@ -74,7 +74,7 @@ struct PortfolioValueHeaderView: View {
                     label: "All time"
                 )
             }
-            
+
             Text("Available balance: \(availableCash.asCurrencyWith2Decimals())")
                 .font(.caption)
                 .foregroundStyle(Color.theme.secondaryText)
@@ -86,16 +86,16 @@ struct PortfolioValueHeaderView: View {
 
     private func performanceLine(value: Double, percentage: Double, label: String) -> some View {
         let trend = performanceTrend(value: value, percentage: percentage)
-        
+
         return HStack(spacing: 5) {
             Image(systemName: iconName(for: trend))
                 .font(.caption2.weight(.semibold))
-            
+
             Text(formattedPerformanceText(value: value, percentage: percentage, trend: trend))
                 .font(.footnote.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            
+
             Text(label)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.primary)
@@ -104,17 +104,17 @@ struct PortfolioValueHeaderView: View {
         }
         .foregroundStyle(color(for: trend))
     }
-    
+
     private func performanceTrend(value: Double, percentage: Double) -> PerformanceTrend {
         let safePercentage = sanitizedPercentage(percentage)
-        
+
         if abs(value) < 0.005, abs(safePercentage) < 0.005 {
             return .neutral
         }
-        
+
         return value >= 0 ? .positive : .negative
     }
-    
+
     private func iconName(for trend: PerformanceTrend) -> String {
         switch trend {
         case .positive:
@@ -125,7 +125,7 @@ struct PortfolioValueHeaderView: View {
             return "chevron.right"
         }
     }
-    
+
     private func color(for trend: PerformanceTrend) -> Color {
         switch trend {
         case .positive:
@@ -136,7 +136,7 @@ struct PortfolioValueHeaderView: View {
             return Color.theme.secondaryText
         }
     }
-    
+
     private func formattedPerformanceText(value: Double, percentage: Double, trend: PerformanceTrend) -> String {
         let safePercentage = sanitizedPercentage(percentage)
         let sign: String
@@ -148,29 +148,29 @@ struct PortfolioValueHeaderView: View {
         case .neutral:
             sign = ""
         }
-        
+
         let dollars = abs(value).asCurrencyWith2Decimals()
         let percent = abs(safePercentage).asNumberString()
         return "\(sign)\(dollars) (\(sign)\(percent)%)"
     }
-    
+
     private func sanitizedPercentage(_ percentage: Double) -> Double {
         guard percentage.isFinite, abs(percentage) <= 999_999.99 else {
             return 0
         }
-        
+
         return percentage
     }
 }
 
 struct HomeStatsView: View {
-    
+
     @EnvironmentObject private var vm: HomeViewModel
     let portfolioValue: Double
     let availableCash: Double
     let showAccountSummary: Bool
     let showMarketStats: Bool
-    
+
     init(
         portfolioValue: Double,
         availableCash: Double,
@@ -182,14 +182,14 @@ struct HomeStatsView: View {
         self.showAccountSummary = showAccountSummary
         self.showMarketStats = showMarketStats
     }
-    
+
     private struct MarketTickerItem: Identifiable {
         let id: String
         let title: String
         let value: String
         let percentageChange: Double?
     }
-    
+
     private var marketStats: [MarketTickerItem] {
         let orderedTitles = [
             "Market Cap",
@@ -198,7 +198,7 @@ struct HomeStatsView: View {
             "Market Cap 24h",
             "Markets"
         ]
-        
+
         return orderedTitles.compactMap { title in
             guard let stat = vm.statistics.first(where: { $0.title == title }) else { return nil }
             return MarketTickerItem(
@@ -209,27 +209,27 @@ struct HomeStatsView: View {
             )
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 6) {
             if showAccountSummary {
                 accountSummary
             }
-            
+
             if showMarketStats {
                 marketStatsStrip
             }
         }
         .padding(.horizontal, 14)
     }
-    
+
     private var accountSummary: some View {
         PortfolioValueHeaderView(
             portfolioValue: portfolioValue,
             availableCash: availableCash
         )
     }
-    
+
     private var marketStatsStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 14) {
@@ -239,7 +239,7 @@ struct HomeStatsView: View {
                             .font(.caption)
                             .foregroundStyle(Color.theme.secondaryText)
                             .lineLimit(1)
-                        
+
                         Text(stat.value)
                             .font(.headline)
                             .fontWeight(.semibold)
@@ -266,7 +266,7 @@ struct HomeStatsView: View {
         .scrollTargetBehavior(.viewAligned)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
-    
+
     private func valueColor(for stat: MarketTickerItem) -> Color {
         if stat.title == "Market Cap 24h",
            let percentageChange = stat.percentageChange {

@@ -12,20 +12,19 @@ struct HomeView: View {
         case live
         case portfolio
     }
-    
+
     private enum LiveFilterMode: String, CaseIterable, Identifiable {
         case topGainers = "Top Gainers"
         case topVolume = "Top Volume"
         case topLosers = "Top Losers"
-        
+
         var id: String { rawValue }
     }
-    
+
     @AppStorage("vt_sim_cash_balance") private var simulatedCashBalance: Double = 100_000
     @AppStorage(TradingSession.StorageKeys.profileID) private var profileID: String = TradingProfile.seriousInvestor.id
     @AppStorage("vt_reduce_motion") private var reduceMotion: Bool = false
     @EnvironmentObject private var vm: HomeViewModel
-    @EnvironmentObject private var newsService: NewsService
     @EnvironmentObject private var watchlistStore: WatchlistStore
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
     @State private var showPortfolioEditor: Bool = false // new sheet for adding
@@ -35,31 +34,30 @@ struct HomeView: View {
     @State private var showTradeHistoryView: Bool = false
     @State private var selectedLiveFilterMode: LiveFilterMode? = nil
     private let screenMode: ScreenMode
-    private let onViewAllNews: (() -> Void)?
-    
-    init(screenMode: ScreenMode = .live, onViewAllNews: (() -> Void)? = nil) {
+
+    init(screenMode: ScreenMode = .live) {
         self.screenMode = screenMode
-        self.onViewAllNews = onViewAllNews
     }
-    
+
     private var showPortfolio: Bool {
         screenMode == .portfolio
     }
-    
+
     var body: some View {
         ZStack {
             // Background Layer
             Color.theme.background
                 .ignoresSafeArea()
-            
+
             // Content Layer
-            VStack {
-                
+            VStack(spacing: showPortfolio ? 14 : 8) {
+
                 homeHeader
-                
+
                 SearchBarView(searchText: $vm.searchText)
-                    .padding(.vertical, -10)
-                
+                    .padding(.top, 6)
+                    .padding(.bottom, showPortfolio ? 6 : 0)
+
                 if !showPortfolio {
                     liveCategoryButtons
                         .transition(categoryButtonsTransition)
@@ -69,7 +67,7 @@ struct HomeView: View {
                     allCoinsList
                         .transition(liveCoinsTransition)
                 }
-                
+
                 if showPortfolio {
                     portfolioCoinsList
                         .transition(portfolioCoinsTransition)
@@ -77,7 +75,7 @@ struct HomeView: View {
             }
             .animation(motionAwareAnimation, value: showPortfolio)
             .fullScreenCover(isPresented: $showPortfolioEditor) {
-                PortfolioView(preselectedCoin: nil)
+                PortfolioView()
                     .environmentObject(vm)
                     .environmentObject(tradeHistoryStore)
                     .background(Color.theme.background.ignoresSafeArea())
@@ -87,9 +85,9 @@ struct HomeView: View {
                     .environmentObject(vm)
                     .environmentObject(tradeHistoryStore)
                     .presentationDetents([.fraction(0.8)])
-                
+
             }
-            
+
             if showPortfolio {
                 addPortfolioFAB
             }
@@ -110,9 +108,6 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showTradeHistoryView) {
             TradeHistoryView()
         }
-        .task {
-            await newsService.loadIfNeeded()
-        }
     }
 }
 
@@ -121,7 +116,6 @@ struct HomeView: View {
         HomeView()
     }
     .environmentObject(DeveloperPreview.instance.homeVM)
-    .environmentObject(NewsService())
     .environmentObject(WatchlistStore())
     .environmentObject(TradeHistoryStore())
 }
@@ -130,19 +124,19 @@ extension HomeView {
     private var motionAwareAnimation: Animation? {
         reduceMotion ? nil : .easeInOut
     }
-    
+
     private var categoryButtonsTransition: AnyTransition {
         reduceMotion ? .identity : .move(edge: .top).combined(with: .opacity)
     }
-    
+
     private var liveCoinsTransition: AnyTransition {
         reduceMotion ? .identity : .move(edge: .leading)
     }
-    
+
     private var portfolioCoinsTransition: AnyTransition {
         reduceMotion ? .identity : .move(edge: .trailing)
     }
-    
+
     private func performMotionAwareAnimation(_ animation: Animation = .default, _ action: () -> Void) {
         if reduceMotion {
             action()
@@ -150,7 +144,7 @@ extension HomeView {
             withAnimation(animation, action)
         }
     }
-    
+
     private var displayedLiveCoins: [CoinModel] {
         switch selectedLiveFilterMode {
         case .topGainers:
@@ -163,54 +157,62 @@ extension HomeView {
             return vm.allCoins
         }
     }
-    
+
     private func priceChangePercent(for coin: CoinModel) -> Double {
         let change = coin.priceChangePercentage24H ?? 0
         return change.isFinite ? change : 0
     }
-    
+
     private func volumeValue(for coin: CoinModel) -> Double {
         let volume = coin.totalVolume ?? 0
         return volume.isFinite ? volume : 0
     }
-    
+
     private func selectLiveFilterMode(_ mode: LiveFilterMode) {
         AppHaptics.impact(.soft)
         performMotionAwareAnimation(.easeInOut(duration: 0.22)) {
             selectedLiveFilterMode = selectedLiveFilterMode == mode ? nil : mode
         }
     }
-    
+
     private var portfolioHoldingsValue: Double {
-        vm.portfolioCoins.reduce(0) { partialResult, coin in
-            let holdings = coin.currentHoldings ?? 0
-            let price = coin.currentPrice
-            guard holdings.isFinite, price.isFinite, holdings >= 0, price >= 0 else {
-                return partialResult
-            }
-            return partialResult + (holdings * price)
-        }
+        accountValueSummary.holdingsValue
     }
 
     private var todayAccountPerformance: (value: Double, percentage: Double) {
         vm.todayAccountChangeSummary()
     }
-    
-    private var totalAccountBalance: Double {
-        portfolioHoldingsValue + simulatedCashBalance
+
+    private var accountValueSummary: HomeViewModel.AccountValueSummary {
+        vm.accountValueSummary
     }
-    
+
+    private var totalAccountBalance: Double {
+        if accountValueSummary.isTrusted {
+            return accountValueSummary.totalValue
+        }
+        return vm.lastTrustedAccountValueForDisplay ?? profileStartingBalance
+    }
+
+    private var availableCashBalance: Double {
+        _ = simulatedCashBalance
+        return accountValueSummary.cashBalance
+    }
+
     private var profileStartingBalance: Double {
         TradingSession.startingBalance(forProfileID: profileID)
     }
-    
+
     private var accountAllTimeChangeValue: Double {
-        totalAccountBalance - profileStartingBalance
+        accountAllTimePerformance.value
     }
-    
+
     private var accountAllTimeChangePercentage: Double {
-        guard profileStartingBalance > 0 else { return 0 }
-        return (accountAllTimeChangeValue / profileStartingBalance) * 100
+        accountAllTimePerformance.percentage
+    }
+
+    private var accountAllTimePerformance: (value: Double, percentage: Double) {
+        vm.allTimeAccountChangeSummary(startingBalance: profileStartingBalance)
     }
 
     private var watchlistCoins: [CoinModel] {
@@ -219,7 +221,7 @@ extension HomeView {
             sourceCoins.first(where: { $0.id == id })
         }
     }
-    
+
     private var watchlistPreviewCoins: [CoinModel] {
         Array(watchlistCoins.prefix(3))
     }
@@ -228,7 +230,7 @@ extension HomeView {
         PortfolioValueHeaderView(
             portfolioValue: portfolioHoldingsValue,
             accountBalance: totalAccountBalance,
-            availableCash: simulatedCashBalance,
+            availableCash: availableCashBalance,
             dayChangeValue: todayAccountPerformance.value,
             dayChangePercentage: todayAccountPerformance.percentage,
             allTimeChangeValue: accountAllTimeChangeValue,
@@ -237,12 +239,12 @@ extension HomeView {
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.bottom, showPortfolio ? 14 : 8)
     }
-    
+
     private var liveCategoryButtons: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 18) {
                 ForEach(LiveFilterMode.allCases) { mode in
                     Button {
                         selectLiveFilterMode(mode)
@@ -263,7 +265,7 @@ extension HomeView {
                     }
                     .buttonStyle(.plain)
                 }
-                
+
                 if selectedLiveFilterMode != nil {
                     Button {
                         performMotionAwareAnimation(.easeInOut(duration: 0.2)) {
@@ -284,11 +286,11 @@ extension HomeView {
                     .foregroundStyle(Color.theme.secondaryText)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
-    
+
     private var liveListHeader: some View {
         VStack(spacing: 0) {
             balanceHeader
@@ -303,19 +305,19 @@ extension HomeView {
             columnTitles
         }
     }
-    
+
     private var portfolioListHeader: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 10) {
             balanceHeader
-            
+
             HStack {
                 Text("Activity")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.theme.secondaryText)
-                
+
                 Spacer()
-                
+
                 Button(action: openTradeHistoryView) {
                     HStack(spacing: 6) {
                         Image(systemName: "clock")
@@ -329,8 +331,8 @@ extension HomeView {
                 .accessibilityLabel("Open Trade History")
             }
             .padding(.horizontal)
-            .padding(.bottom, 8)
-            
+            .padding(.bottom, 10)
+
             columnTitles
         }
     }
@@ -344,30 +346,30 @@ extension HomeView {
                 CircleButtonView(iconName: "info")
             })
             .accessibilityLabel("Open Settings")
-            
+
             Spacer()
-            
+
             Text(showPortfolio ? "Portfolio" : "Home")
                 .font(.headline)
                 .fontWeight(.heavy)
                 .foregroundStyle(Color.primary)
-            
+
             Spacer()
-            
+
             CircleButtonView(iconName: "info")
                 .hidden()
                 .accessibilityHidden(true)
         }
         .padding(.horizontal)
     }
-    
+
     private var addPortfolioFAB: some View {
         VStack {
             Spacer()
-            
+
             HStack {
                 Spacer()
-                
+
                 Button(action: {
                     AppHaptics.impact(.light)
                     showPortfolioEditor.toggle()
@@ -389,32 +391,32 @@ extension HomeView {
             }
         }
     }
-    
+
     // For Coin Navigation
     private func segue(coin: CoinModel) {
         selectedCoin = coin
     }
-    
+
     private func openWatchlistView() {
         AppHaptics.impact(.light)
-        
+
         showWatchlistView = true
     }
-    
+
     private func openTradeHistoryView() {
         AppHaptics.impact(.light)
         showTradeHistoryView = true
     }
-    
+
     private var watchlistCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Watchlist")
                     .font(.title3)
                     .fontWeight(.bold)
-                
+
                 Spacer()
-                
+
                 Button(action: openWatchlistView) {
                     Image(systemName: "arrow.right")
                         .font(.headline)
@@ -428,13 +430,13 @@ extension HomeView {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open Watchlist")
             }
-            
+
             if watchlistStore.ids.isEmpty {
                 Text("Star coins to add them here.")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.theme.secondaryText)
-                
+
                 Button(action: openWatchlistView) {
                     Text("Manage")
                         .font(.headline)
@@ -470,94 +472,46 @@ extension HomeView {
         .padding(.horizontal)
         .padding(.vertical, 4)
     }
-    
-    private var latestNewsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Latest News")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Button(action: openNewsView) {
-                    Text("View All")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.theme.accent)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("View all news")
-            }
-            
-            if let article = newsService.latestArticle {
-                Text(article.title)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.primary)
-                    .lineLimit(2)
-            } else if newsService.isLoading {
-                Text("Loading latest headline...")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.theme.secondaryText)
-            } else {
-                Text("No news available right now.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.theme.secondaryText)
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.theme.accentBackground)
-        )
-        .padding(.horizontal)
-        .padding(.vertical, 4)
-    }
-    
-    private func openNewsView() {
-        AppHaptics.impact(.light)
-        onViewAllNews?()
-    }
-    
+
     private func watchlistRow(coin: CoinModel) -> some View {
         let percentChange = coin.priceChangePercentage24H ?? 0
         let isPositive = percentChange >= 0
-        
+
         return HStack(spacing: 12) {
             CoinImageView(coin: coin)
                 .frame(width: 32, height: 32)
-            
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(coin.name)
                     .font(.headline)
                     .lineLimit(1)
-                
+
                 Text(coin.symbol.uppercased())
                     .font(.caption)
                     .foregroundStyle(Color.theme.secondaryText)
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing, spacing: 4) {
                 Text(coin.currentPrice.asCurrencyWithAdaptiveDecimals())
                     .font(.headline)
                     .lineLimit(1)
-                
+
                 Text("\(isPositive ? "+" : "")\(percentChange.asNumberString())%")
                     .font(.caption)
                     .foregroundStyle(isPositive ? Color.theme.green : Color.theme.red)
             }
         }
     }
-    
+
     private var allCoinsList: some View {
         List {
             liveListHeader
                 .listRowInsets(.init())
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
-            
+
             ForEach(displayedLiveCoins) { coin in
                 CoinRowView(coin: coin, showHoldingsColumn: false)
                 .listRowInsets(.init(top: 14, leading: 0, bottom: 14, trailing: 10))
@@ -575,15 +529,15 @@ extension HomeView {
         .scrollIndicators(.hidden)
         .listStyle(.plain)
     }
-    
-    
+
+
     private var portfolioCoinsList: some View {
         List {
             portfolioListHeader
                 .listRowInsets(.init())
                 .listRowBackground(Color.theme.background)
                 .listRowSeparator(.hidden)
-            
+
             if vm.portfolioCoins.isEmpty && vm.searchText.isEmpty {
                 EmptyStatePortfolio()
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -607,7 +561,7 @@ extension HomeView {
         .scrollIndicators(.hidden)
         .listStyle(.plain)
     }
-    
+
     private var columnTitles: some View {
         HStack {
             HStack(spacing: 4) {
@@ -622,9 +576,9 @@ extension HomeView {
                     vm.sortOption = vm.sortOption == .rank ? .rankReversed : .rank
                 }
             }
-            
+
             Spacer()
-            
+
             if showPortfolio {
                 HStack(spacing: 4) {
                     Text("Holdings")
@@ -638,7 +592,7 @@ extension HomeView {
                     }
                 }
             }
-            
+
             HStack(spacing: 4) {
                 Text("Price")
                 Image(systemName: "chevron.down")
@@ -656,18 +610,18 @@ extension HomeView {
         .fontWeight(.medium)
         .foregroundStyle(Color.theme.secondaryText)
         .padding(.horizontal)
-        .padding(.top, 10)
+        .padding(.top, showPortfolio ? 16 : 10)
 
     }
 }
 
 struct TradeHistoryView: View {
     @EnvironmentObject private var tradeHistoryStore: TradeHistoryStore
-    
+
     private var trades: [TradeModel] {
         tradeHistoryStore.getTrades()
     }
-    
+
     var body: some View {
         List {
             if trades.isEmpty {
@@ -698,19 +652,19 @@ struct TradeHistoryView: View {
 
 private struct TradeHistoryRow: View {
     let trade: TradeModel
-    
+
     private var tradeTypeText: String {
         trade.type.rawValue.uppercased()
     }
-    
+
     private var tradeTypeColor: Color {
         trade.type == .buy ? Color.theme.green : Color.theme.red
     }
-    
+
     private var timestampText: String {
         trade.timestamp.formatted(date: .abbreviated, time: .shortened)
     }
-    
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
@@ -719,41 +673,41 @@ private struct TradeHistoryRow: View {
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundStyle(tradeTypeColor)
-                    
+
                     Text(trade.symbol.uppercased())
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.primary)
                 }
-                
+
                 Text(trade.name)
                     .font(.caption)
                     .foregroundStyle(Color.theme.secondaryText)
-                
+
                 Text(timestampText)
                     .font(.caption2)
                     .foregroundStyle(Color.theme.secondaryText)
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing, spacing: 5) {
                 Text("\(formattedQuantity(trade.quantity)) \(trade.symbol.uppercased())")
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.primary)
-                
+
                 Text("@ \(trade.priceAtExecution.asCurrencyWithAdaptiveDecimals())")
                     .font(.caption)
                     .foregroundStyle(Color.theme.secondaryText)
-                
+
                 Text(trade.totalValue.asCurrencyWithAdaptiveDecimals())
                     .font(.caption)
                     .foregroundStyle(Color.theme.secondaryText)
             }
         }
     }
-    
+
     private func formattedQuantity(_ value: Double) -> String {
         let fixed = String(format: "%.6f", value)
         return fixed
